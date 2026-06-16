@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { register } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { t, STATES, HOUSING_TYPES } from '@/lib/i18n';
-import { ChevronDown, ArrowLeft } from 'lucide-react';
+import { ChevronDown, ArrowLeft, Check } from 'lucide-react';
 
 function ElectricBackground() {
   const canvasRef = useRef(null);
@@ -107,6 +107,7 @@ export default function RegisterPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [form, setForm] = useState({
     email: '', password: '', confirmPassword: '', name: '', phone: '',
     userType: 'HOUSEHOLD', orgName: '', postcode: '', township: '',
@@ -117,13 +118,20 @@ export default function RegisterPage() {
 
   const handleNext = () => {
     if (!form.email || !form.password || !form.name) {
-      toast.error('Please fill in all required fields'); return;
+      toast.error(lang === 'EN' ? 'Please fill in all required fields' : 'Sila isi semua medan yang diperlukan');
+      return;
     }
     if (form.password !== form.confirmPassword) {
-      toast.error('Passwords do not match'); return;
+      toast.error(lang === 'EN' ? 'Passwords do not match' : 'Kata laluan tidak sepadan');
+      return;
     }
     if (form.password.length < 8) {
-      toast.error('Password must be at least 8 characters'); return;
+      toast.error(lang === 'EN' ? 'Password must be at least 8 characters' : 'Kata laluan mestilah sekurang-kurangnya 8 aksara');
+      return;
+    }
+    if (!agreed) {
+      toast.error(lang === 'EN' ? 'Please agree to Terms & Privacy Policy' : 'Sila bersetuju dengan Terma & Dasar Privasi');
+      return;
     }
     setStep(2);
   };
@@ -134,7 +142,7 @@ export default function RegisterPage() {
     try {
       const res = await register({ ...form, language: lang });
       loginUser(res.data.token, res.data.user);
-      toast.success('Account created!');
+      toast.success(lang === 'EN' ? 'Account created!' : 'Akaun berjaya dibuat!');
       router.replace('/dashboard/onboarding');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed');
@@ -177,9 +185,13 @@ export default function RegisterPage() {
       {/* Progress Bar */}
       <div className="relative z-10 px-6 mb-4">
         <div className="flex gap-2">
-          <div className="h-1 flex-1 rounded-full" style={{ background: '#FACC15', boxShadow: '0 0 8px rgba(250,204,21,0.5)' }} />
+          <div className="h-1 flex-1 rounded-full"
+            style={{ background: '#FACC15', boxShadow: '0 0 8px rgba(250,204,21,0.5)' }} />
           <div className="h-1 flex-1 rounded-full transition-all duration-500"
-            style={{ background: step === 2 ? '#FACC15' : 'rgba(255,255,255,0.1)', boxShadow: step === 2 ? '0 0 8px rgba(250,204,21,0.5)' : 'none' }} />
+            style={{
+              background: step === 2 ? '#FACC15' : 'rgba(255,255,255,0.1)',
+              boxShadow: step === 2 ? '0 0 8px rgba(250,204,21,0.5)' : 'none'
+            }} />
         </div>
         <p className="text-xs mt-1" style={{ color: 'rgba(250,204,21,0.5)' }}>
           {lang === 'EN' ? `Step ${step} of 2` : `Langkah ${step} daripada 2`}
@@ -194,13 +206,11 @@ export default function RegisterPage() {
         >
           {/* Title */}
           <div className="mb-6">
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-2xl font-bold text-white">
-                {step === 1
-                  ? (lang === 'EN' ? 'Create Account' : 'Buat Akaun')
-                  : (lang === 'EN' ? 'Your Home Profile' : 'Profil Rumah Anda')}
-              </h1>
-            </div>
+            <h1 className="text-2xl font-bold text-white mb-1">
+              {step === 1
+                ? (lang === 'EN' ? 'Create Account' : 'Buat Akaun')
+                : (lang === 'EN' ? 'Your Home Profile' : 'Profil Rumah Anda')}
+            </h1>
             <p className="text-sm" style={{ color: 'rgba(250,204,21,0.6)' }}>
               {step === 1
                 ? (lang === 'EN' ? '⚡ AI-Powered Bill Intelligence' : '⚡ Kecerdasan Bil Dikuasai AI')
@@ -211,7 +221,8 @@ export default function RegisterPage() {
           {step === 1 ? (
             <div className="flex flex-col gap-4">
               {/* Account Type Toggle */}
-              <div className="flex gap-2 p-1 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(250,204,21,0.1)' }}>
+              <div className="flex gap-2 p-1 rounded-xl"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(250,204,21,0.1)' }}>
                 {['HOUSEHOLD', 'INSTITUTIONAL'].map(type => (
                   <button
                     key={type}
@@ -281,19 +292,65 @@ export default function RegisterPage() {
                 required
               />
 
+              {/* ── TERMS & PRIVACY CHECKBOX ── */}
+              <button
+                type="button"
+                onClick={() => setAgreed(!agreed)}
+                className="flex items-start gap-3 text-left w-full transition-all duration-300 mt-1"
+              >
+                <div
+                  className="w-5 h-5 rounded-md flex-shrink-0 mt-0.5 flex items-center justify-center transition-all duration-300"
+                  style={{
+                    background: agreed ? '#FACC15' : 'rgba(255,255,255,0.04)',
+                    border: agreed ? '1px solid #FACC15' : '1px solid rgba(250,204,21,0.3)',
+                    boxShadow: agreed ? '0 0 10px rgba(250,204,21,0.4)' : 'none'
+                  }}
+                >
+                  {agreed && <Check className="w-3 h-3" style={{ color: '#000000' }} />}
+                </div>
+                <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                  {lang === 'EN' ? 'I agree to the ' : 'Saya bersetuju dengan '}
+                  <Link
+                    href="/terms"
+                    onClick={e => e.stopPropagation()}
+                    className="font-semibold underline"
+                    style={{ color: '#FACC15' }}
+                  >
+                    {lang === 'EN' ? 'Terms of Service' : 'Terma Perkhidmatan'}
+                  </Link>
+                  {lang === 'EN' ? ' and ' : ' dan '}
+                  <Link
+                    href="/privacy"
+                    onClick={e => e.stopPropagation()}
+                    className="font-semibold underline"
+                    style={{ color: '#FACC15' }}
+                  >
+                    {lang === 'EN' ? 'Privacy Policy' : 'Dasar Privasi'}
+                  </Link>
+                  {lang === 'EN'
+                    ? ' of JIMAT by AWAS Premium Resources'
+                    : ' JIMAT oleh AWAS Premium Resources'}
+                </p>
+              </button>
+
+              {/* Continue Button */}
               <button
                 type="button"
                 onClick={handleNext}
                 className="w-full py-3.5 rounded-xl font-bold text-sm transition-all duration-300 mt-2"
                 style={{
-                  background: 'linear-gradient(135deg, #FACC15 0%, #EAB308 100%)',
-                  color: '#000000',
-                  boxShadow: '0 0 20px rgba(250,204,21,0.4)'
+                  background: agreed
+                    ? 'linear-gradient(135deg, #FACC15 0%, #EAB308 100%)'
+                    : 'rgba(250,204,21,0.2)',
+                  color: agreed ? '#000000' : 'rgba(0,0,0,0.4)',
+                  boxShadow: agreed ? '0 0 20px rgba(250,204,21,0.4)' : 'none',
+                  cursor: agreed ? 'pointer' : 'not-allowed'
                 }}
               >
                 <span className="flex items-center justify-center gap-2">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" fill="#000000" />
+                    <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z"
+                      fill={agreed ? '#000000' : 'rgba(0,0,0,0.3)'} />
                   </svg>
                   {lang === 'EN' ? 'Continue' : 'Teruskan'}
                 </span>
@@ -346,7 +403,9 @@ export default function RegisterPage() {
                 disabled={loading}
                 className="w-full py-3.5 rounded-xl font-bold text-sm transition-all duration-300 mt-2"
                 style={{
-                  background: loading ? 'rgba(250,204,21,0.3)' : 'linear-gradient(135deg, #FACC15 0%, #EAB308 100%)',
+                  background: loading
+                    ? 'rgba(250,204,21,0.3)'
+                    : 'linear-gradient(135deg, #FACC15 0%, #EAB308 100%)',
                   color: '#000000',
                   boxShadow: loading ? 'none' : '0 0 20px rgba(250,204,21,0.4)'
                 }}
