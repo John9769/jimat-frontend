@@ -5,11 +5,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 import { saveAppliances, getProfile } from '@/lib/api';
 import { t, APPLIANCE_TYPES } from '@/lib/i18n';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import Card from '@/components/ui/Card';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { Zap, Plus, Trash2, ArrowLeft, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, ChevronDown } from 'lucide-react';
 
 const defaultAppliance = {
   roomName: '',
@@ -21,6 +17,70 @@ const defaultAppliance = {
   qty: '1',
   avgHoursDaily: '8'
 };
+
+function ElectricBackground() {
+  const [particles] = useState(() =>
+    Array.from({ length: 30 }, (_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      size: Math.random() * 2 + 1,
+      duration: Math.random() * 3 + 2,
+      delay: Math.random() * 3,
+      color: Math.random() > 0.5 ? '#FACC15' : '#86EFAC'
+    }))
+  );
+  return (
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" style={{ background: '#000000' }}>
+      {particles.map(p => (
+        <div key={p.id} className="absolute rounded-full animate-pulse"
+          style={{
+            left: p.left, top: p.top,
+            width: p.size, height: p.size,
+            background: p.color, opacity: 0.2,
+            animationDuration: `${p.duration}s`,
+            animationDelay: `${p.delay}s`
+          }} />
+      ))}
+    </div>
+  );
+}
+
+const ElectricInput = ({ label, type = 'text', value, onChange, placeholder }) => (
+  <div className="flex flex-col gap-1">
+    <label className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>{label}</label>
+    <input
+      type={type}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className="px-3 py-2.5 rounded-xl text-white text-sm placeholder-gray-600 outline-none transition-all duration-300"
+      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(250,204,21,0.15)' }}
+      onFocus={e => e.target.style.border = '1px solid rgba(250,204,21,0.5)'}
+      onBlur={e => e.target.style.border = '1px solid rgba(250,204,21,0.15)'}
+    />
+  </div>
+);
+
+const ElectricSelect = ({ label, value, onChange, children }) => (
+  <div className="flex flex-col gap-1">
+    <label className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>{label}</label>
+    <div className="relative">
+      <select
+        value={value}
+        onChange={onChange}
+        className="w-full px-3 py-2.5 rounded-xl text-white text-sm outline-none appearance-none transition-all duration-300"
+        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(250,204,21,0.15)' }}
+        onFocus={e => e.target.style.border = '1px solid rgba(250,204,21,0.5)'}
+        onBlur={e => e.target.style.border = '1px solid rgba(250,204,21,0.15)'}
+      >
+        {children}
+      </select>
+      <ChevronDown className="absolute right-3 top-3 w-4 h-4 pointer-events-none"
+        style={{ color: 'rgba(250,204,21,0.4)' }} />
+    </div>
+  </div>
+);
 
 export default function OnboardingPage() {
   const { user, loading, lang } = useAuth();
@@ -51,15 +111,10 @@ export default function OnboardingPage() {
     }
   }, [user, loading]);
 
-  const addAppliance = () => {
-    setAppliances([...appliances, { ...defaultAppliance }]);
-  };
+  const addAppliance = () => setAppliances([...appliances, { ...defaultAppliance }]);
 
   const removeAppliance = (index) => {
-    if (appliances.length === 1) {
-      toast.error('At least 1 appliance required');
-      return;
-    }
+    if (appliances.length === 1) { toast.error('At least 1 appliance required'); return; }
     setAppliances(appliances.filter((_, i) => i !== index));
   };
 
@@ -88,124 +143,145 @@ export default function OnboardingPage() {
     }
   };
 
-  if (loading || pageLoading) return <LoadingSpinner />;
-
-  const selectClass = "bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-green-500 transition-colors w-full appearance-none";
+  if (loading || pageLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#000000' }}>
+        <div className="text-center">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse"
+            style={{ background: 'rgba(250,204,21,0.1)', border: '1px solid rgba(250,204,21,0.3)' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" fill="#FACC15" />
+            </svg>
+          </div>
+          <p className="text-sm animate-pulse" style={{ color: 'rgba(250,204,21,0.6)' }}>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen relative" style={{ background: '#000000' }}>
+      <ElectricBackground />
+
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
-        <button onClick={() => router.back()} className="text-gray-400 hover:text-white">
+      <div className="relative z-10 px-4 py-3 flex items-center gap-3 sticky top-0"
+        style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(250,204,21,0.1)' }}>
+        <button onClick={() => router.back()} style={{ color: 'rgba(250,204,21,0.6)' }}>
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-green-500" />
-          <span className="font-bold text-white">JIMAT</span>
+          <div className="w-6 h-6 rounded-lg flex items-center justify-center"
+            style={{ background: 'rgba(250,204,21,0.15)', border: '1px solid rgba(250,204,21,0.3)' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" fill="#FACC15" />
+            </svg>
+          </div>
+          <span className="font-bold text-white tracking-wide">JIMAT</span>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-6 pb-32">
+      <div className="relative z-10 max-w-lg mx-auto px-4 py-6 pb-32">
+        {/* Title */}
         <h1 className="text-xl font-bold text-white mb-1">{t('onboard.title', lang)}</h1>
-        <p className="text-gray-400 text-sm mb-6">{t('onboard.subtitle', lang)}</p>
+        <p className="text-sm mb-6" style={{ color: 'rgba(250,204,21,0.6)' }}>
+          ⚡ {t('onboard.subtitle', lang)}
+        </p>
 
+        {/* Appliance Cards */}
         <div className="space-y-4">
           {appliances.map((appliance, index) => (
-            <Card key={index} className="space-y-3">
+            <div key={index} className="rounded-2xl p-4 space-y-3"
+              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(250,204,21,0.15)' }}>
+
+              {/* Card Header */}
               <div className="flex items-center justify-between">
-                <span className="text-green-500 text-sm font-semibold">
-                  {lang === 'EN' ? `Appliance ${index + 1}` : `Peralatan ${index + 1}`}
-                </span>
-                <button
-                  onClick={() => removeAppliance(index)}
-                  className="text-red-400 hover:text-red-300 transition-colors"
-                >
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold"
+                    style={{ background: 'rgba(250,204,21,0.15)', color: '#FACC15', border: '1px solid rgba(250,204,21,0.3)' }}>
+                    {index + 1}
+                  </div>
+                  <span className="text-sm font-semibold" style={{ color: '#FACC15' }}>
+                    {lang === 'EN' ? `Appliance ${index + 1}` : `Peralatan ${index + 1}`}
+                  </span>
+                </div>
+                <button onClick={() => removeAppliance(index)}
+                  className="transition-colors p-1 rounded-lg"
+                  style={{ color: 'rgba(239,68,68,0.6)' }}>
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
 
-              <Input
+              <ElectricInput
                 label={t('onboard.room', lang)}
                 value={appliance.roomName}
                 onChange={e => updateAppliance(index, 'roomName', e.target.value)}
                 placeholder={lang === 'EN' ? 'e.g. Master Bedroom, Hall' : 'cth. Bilik Tidur Utama, Ruang Tamu'}
               />
 
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-gray-400 font-medium">{t('onboard.type', lang)}</label>
-                <div className="relative">
-                  <select
-                    value={appliance.applianceType}
-                    onChange={e => updateAppliance(index, 'applianceType', e.target.value)}
-                    className={selectClass}
-                  >
-                    {APPLIANCE_TYPES.map(type => (
-                      <option key={type.value} value={type.value}>
-                        {type.label[lang] || type.label.EN}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
+              <ElectricSelect
+                label={t('onboard.type', lang)}
+                value={appliance.applianceType}
+                onChange={e => updateAppliance(index, 'applianceType', e.target.value)}
+              >
+                {APPLIANCE_TYPES.map(type => (
+                  <option key={type.value} value={type.value} style={{ background: '#111' }}>
+                    {type.label[lang] || type.label.EN}
+                  </option>
+                ))}
+              </ElectricSelect>
 
               {appliance.applianceType === 'AIRCOND' && (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1">
-                      <label className="text-sm text-gray-400 font-medium">{t('onboard.hp', lang)}</label>
-                      <div className="relative">
-                        <select
-                          value={appliance.hp}
-                          onChange={e => updateAppliance(index, 'hp', e.target.value)}
-                          className={selectClass}
+                <div className="grid grid-cols-2 gap-3">
+                  <ElectricSelect
+                    label={t('onboard.hp', lang)}
+                    value={appliance.hp}
+                    onChange={e => updateAppliance(index, 'hp', e.target.value)}
+                  >
+                    {['0.5', '0.75', '1.0', '1.5', '2.0', '2.5'].map(hp => (
+                      <option key={hp} value={hp} style={{ background: '#111' }}>{hp} HP</option>
+                    ))}
+                  </ElectricSelect>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                      {t('onboard.inverter', lang)}
+                    </label>
+                    <div className="flex gap-2">
+                      {[true, false].map(val => (
+                        <button
+                          key={String(val)}
+                          type="button"
+                          onClick={() => updateAppliance(index, 'inverter', val)}
+                          className="flex-1 py-2 rounded-xl text-xs font-semibold transition-all duration-300"
+                          style={appliance.inverter === val
+                            ? { background: '#FACC15', color: '#000000', boxShadow: '0 0 10px rgba(250,204,21,0.3)' }
+                            : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)' }
+                          }
                         >
-                          {['0.5', '0.75', '1.0', '1.5', '2.0', '2.5'].map(hp => (
-                            <option key={hp} value={hp}>{hp} HP</option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-gray-400 pointer-events-none" />
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-sm text-gray-400 font-medium">{t('onboard.inverter', lang)}</label>
-                      <div className="flex gap-2">
-                        {[true, false].map(val => (
-                          <button
-                            key={String(val)}
-                            type="button"
-                            onClick={() => updateAppliance(index, 'inverter', val)}
-                            className={`flex-1 py-2.5 rounded-xl text-xs font-semibold border transition-all ${
-                              appliance.inverter === val
-                                ? 'border-green-500 bg-green-500/10 text-green-500'
-                                : 'border-gray-700 text-gray-400'
-                            }`}
-                          >
-                            {val ? (lang === 'EN' ? 'Yes' : 'Ya') : (lang === 'EN' ? 'No' : 'Tidak')}
-                          </button>
-                        ))}
-                      </div>
+                          {val ? (lang === 'EN' ? 'Yes' : 'Ya') : (lang === 'EN' ? 'No' : 'Tidak')}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                </>
+                </div>
               )}
 
-              <div className="grid grid-cols-3 gap-3">
-                <Input
+              <div className="grid grid-cols-3 gap-2">
+                <ElectricInput
                   label={t('onboard.age', lang)}
                   type="number"
                   value={appliance.ageYears}
                   onChange={e => updateAppliance(index, 'ageYears', e.target.value)}
                   placeholder="0"
                 />
-                <Input
+                <ElectricInput
                   label={t('onboard.qty', lang)}
                   type="number"
                   value={appliance.qty}
                   onChange={e => updateAppliance(index, 'qty', e.target.value)}
                   placeholder="1"
                 />
-                <Input
+                <ElectricInput
                   label={t('onboard.hours', lang)}
                   type="number"
                   value={appliance.avgHoursDaily}
@@ -214,31 +290,67 @@ export default function OnboardingPage() {
                 />
               </div>
 
-              <Input
+              <ElectricInput
                 label={t('onboard.brand', lang)}
                 value={appliance.brand}
                 onChange={e => updateAppliance(index, 'brand', e.target.value)}
                 placeholder="e.g. Daikin, Panasonic"
               />
-            </Card>
+            </div>
           ))}
         </div>
 
+        {/* Add Appliance Button */}
         <button
           onClick={addAppliance}
-          className="w-full mt-4 py-3 border-2 border-dashed border-gray-700 rounded-2xl text-gray-400 hover:border-green-500 hover:text-green-500 transition-colors flex items-center justify-center gap-2 text-sm"
+          className="w-full mt-4 py-4 rounded-2xl flex items-center justify-center gap-2 text-sm font-medium transition-all duration-300"
+          style={{
+            border: '2px dashed rgba(250,204,21,0.2)',
+            color: 'rgba(250,204,21,0.5)',
+            background: 'rgba(250,204,21,0.02)'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.border = '2px dashed rgba(250,204,21,0.5)';
+            e.currentTarget.style.color = '#FACC15';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.border = '2px dashed rgba(250,204,21,0.2)';
+            e.currentTarget.style.color = 'rgba(250,204,21,0.5)';
+          }}
         >
           <Plus className="w-4 h-4" />
           {t('onboard.addAppliance', lang)}
         </button>
       </div>
 
-      {/* Fixed Bottom Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-950 border-t border-gray-800 p-4">
+      {/* Fixed Bottom Save Button */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 z-20"
+        style={{ background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)', borderTop: '1px solid rgba(250,204,21,0.1)' }}>
         <div className="max-w-lg mx-auto">
-          <Button onClick={handleSave} loading={saving} fullWidth>
-            {t('onboard.save', lang)}
-          </Button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full py-3.5 rounded-xl font-bold text-sm transition-all duration-300"
+            style={{
+              background: saving ? 'rgba(250,204,21,0.3)' : 'linear-gradient(135deg, #FACC15 0%, #EAB308 100%)',
+              color: '#000000',
+              boxShadow: saving ? 'none' : '0 0 20px rgba(250,204,21,0.4)'
+            }}
+          >
+            {saving ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                {lang === 'EN' ? 'Saving...' : 'Menyimpan...'}
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" fill="#000000" />
+                </svg>
+                {t('onboard.save', lang)}
+              </span>
+            )}
+          </button>
         </div>
       </div>
     </div>

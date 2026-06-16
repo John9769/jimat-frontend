@@ -5,10 +5,35 @@ import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 import { getChainInfo, uploadBills } from '@/lib/api';
 import { t } from '@/lib/i18n';
-import Button from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { Zap, ArrowLeft, Upload, FileText, X, AlertCircle, Camera, Image } from 'lucide-react';
+import { ArrowLeft, Camera, FolderOpen, X, FileText, AlertCircle, Plus } from 'lucide-react';
+
+function ElectricBackground() {
+  const [particles] = useState(() =>
+    Array.from({ length: 30 }, (_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      size: Math.random() * 2 + 1,
+      duration: Math.random() * 3 + 2,
+      delay: Math.random() * 3,
+      color: Math.random() > 0.5 ? '#FACC15' : '#86EFAC'
+    }))
+  );
+  return (
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" style={{ background: '#000000' }}>
+      {particles.map(p => (
+        <div key={p.id} className="absolute rounded-full animate-pulse"
+          style={{
+            left: p.left, top: p.top,
+            width: p.size, height: p.size,
+            background: p.color, opacity: 0.2,
+            animationDuration: `${p.duration}s`,
+            animationDelay: `${p.delay}s`
+          }} />
+      ))}
+    </div>
+  );
+}
 
 export default function UploadPage() {
   const { user, loading, lang } = useAuth();
@@ -56,32 +81,21 @@ export default function UploadPage() {
   };
 
   const handleCamera = (e) => {
-    if (e.target.files?.length) {
-      addFiles(e.target.files);
-      e.target.value = '';
-    }
+    if (e.target.files?.length) { addFiles(e.target.files); e.target.value = ''; }
   };
 
   const handleGallery = (e) => {
-    if (e.target.files?.length) {
-      addFiles(e.target.files);
-      e.target.value = '';
-    }
+    if (e.target.files?.length) { addFiles(e.target.files); e.target.value = ''; }
   };
 
-  const removeFile = (index) => {
-    setFiles(files.filter((_, i) => i !== index));
-  };
+  const removeFile = (index) => setFiles(files.filter((_, i) => i !== index));
 
   const handleUpload = async () => {
     const required = chain?.chain?.billsRequired || 2;
     if (files.length < required) {
-      toast.error(lang === 'EN'
-        ? `Please add ${required} bill(s) first`
-        : `Sila tambah ${required} bil dahulu`);
+      toast.error(lang === 'EN' ? `Please add ${required} bill(s) first` : `Sila tambah ${required} bil dahulu`);
       return;
     }
-
     setUploading(true);
     try {
       const formData = new FormData();
@@ -97,63 +111,94 @@ export default function UploadPage() {
     }
   };
 
-  if (loading || pageLoading) return <LoadingSpinner />;
+  if (loading || pageLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#000000' }}>
+        <div className="text-center">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse"
+            style={{ background: 'rgba(250,204,21,0.1)', border: '1px solid rgba(250,204,21,0.3)' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" fill="#FACC15" />
+            </svg>
+          </div>
+          <p className="text-sm animate-pulse" style={{ color: 'rgba(250,204,21,0.6)' }}>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const billsRequired = chain?.chain?.billsRequired || 2;
   const chainStatus = chain?.chain?.status || 'ONBOARD';
   const price = chain?.pricing?.price || 11.99;
+  const filesReady = files.length >= billsRequired;
+  const canAddMore = files.length < billsRequired;
 
-  const statusConfig = {
-    ONBOARD: { label: lang === 'EN' ? '🆕 New — Upload 2 consecutive bills' : '🆕 Baru — Muat naik 2 bil berturut-turut', color: 'blue' },
-    MONTHLY: { label: lang === 'EN' ? '✅ Loyal — Upload this month bill' : '✅ Setia — Muat naik bil bulan ini', color: 'green' },
-    RESET:   { label: lang === 'EN' ? '⚠️ Chain Broken — Upload 2 bills to reset' : '⚠️ Rantaian Terputus — Muat naik 2 bil untuk tetapkan semula', color: 'red' }
+  const chainConfig = {
+    ONBOARD: { label: lang === 'EN' ? '🆕 New User' : '🆕 Pengguna Baru', border: 'rgba(250,204,21,0.3)', bg: 'rgba(250,204,21,0.05)' },
+    MONTHLY: { label: lang === 'EN' ? '✅ Loyal User' : '✅ Pengguna Setia', border: 'rgba(34,197,94,0.3)', bg: 'rgba(34,197,94,0.05)' },
+    RESET: { label: lang === 'EN' ? '⚠️ Chain Broken' : '⚠️ Rantaian Terputus', border: 'rgba(239,68,68,0.3)', bg: 'rgba(239,68,68,0.05)' }
   };
 
-  const config = statusConfig[chainStatus];
-  const filesReady = files.length >= billsRequired;
+  const cc = chainConfig[chainStatus];
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen relative" style={{ background: '#000000' }}>
+      <ElectricBackground />
+
+      {/* Hidden inputs */}
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment"
+        onChange={handleCamera} className="hidden" />
+      <input ref={galleryRef} type="file" accept=".jpg,.jpeg,.png,.pdf"
+        onChange={handleGallery} className="hidden" />
+
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
-        <button onClick={() => router.back()} className="text-gray-400 hover:text-white">
+      <div className="relative z-10 px-4 py-3 flex items-center gap-3 sticky top-0"
+        style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(250,204,21,0.1)' }}>
+        <button onClick={() => router.back()} style={{ color: 'rgba(250,204,21,0.6)' }}>
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-green-500" />
-          <span className="font-bold text-white">JIMAT</span>
+          <div className="w-6 h-6 rounded-lg flex items-center justify-center"
+            style={{ background: 'rgba(250,204,21,0.15)', border: '1px solid rgba(250,204,21,0.3)' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" fill="#FACC15" />
+            </svg>
+          </div>
+          <span className="font-bold text-white tracking-wide">JIMAT</span>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
+      <div className="relative z-10 max-w-lg mx-auto px-4 py-6 pb-32 space-y-5">
 
         {/* Title */}
         <div>
           <h1 className="text-xl font-bold text-white mb-1">{t('upload.title', lang)}</h1>
-          <p className="text-gray-400 text-sm">{t(`upload.${chainStatus.toLowerCase()}`, lang)}</p>
-        </div>
-
-        {/* Status + Price Banner */}
-        <div className={`rounded-2xl p-4 border ${
-          config.color === 'green' ? 'bg-green-500/10 border-green-500/30' :
-          config.color === 'red'   ? 'bg-red-500/10 border-red-500/30' :
-                                     'bg-blue-500/10 border-blue-500/30'
-        }`}>
-          <p className="text-white text-sm font-medium">{config.label}</p>
-          <p className="text-gray-400 text-xs mt-1">
-            {lang === 'EN' ? `Payment after analysis: RM${price} + RM1.00 gateway` : `Bayaran selepas analisis: RM${price} + RM1.00 gateway`}
+          <p className="text-sm" style={{ color: 'rgba(250,204,21,0.6)' }}>
+            ⚡ {t(`upload.${chainStatus.toLowerCase()}`, lang)}
           </p>
         </div>
 
-        {/* Progress Indicator */}
+        {/* Chain + Price Banner */}
+        <div className="rounded-2xl p-4" style={{ background: cc.bg, border: `1px solid ${cc.border}` }}>
+          <p className="text-white text-sm font-semibold">{cc.label}</p>
+          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            {lang === 'EN'
+              ? `Analysis fee: RM${price} + RM1.00 gateway — paid after analysis`
+              : `Yuran analisis: RM${price} + RM1.00 gateway — dibayar selepas analisis`}
+          </p>
+        </div>
+
+        {/* Progress Bar */}
         <div className="flex items-center gap-3">
           {Array.from({ length: billsRequired }).map((_, i) => (
-            <div key={i} className={`flex-1 h-2 rounded-full transition-all ${
-              i < files.length ? 'bg-green-500' : 'bg-gray-800'
-            }`} />
+            <div key={i} className="flex-1 h-2 rounded-full transition-all duration-500"
+              style={{
+                background: i < files.length ? '#FACC15' : 'rgba(255,255,255,0.08)',
+                boxShadow: i < files.length ? '0 0 8px rgba(250,204,21,0.4)' : 'none'
+              }} />
           ))}
-          <span className="text-gray-400 text-sm whitespace-nowrap">
-            {files.length}/{billsRequired} {lang === 'EN' ? 'bill(s)' : 'bil'}
+          <span className="text-sm whitespace-nowrap font-medium" style={{ color: files.length > 0 ? '#FACC15' : 'rgba(255,255,255,0.3)' }}>
+            {files.length}/{billsRequired}
           </span>
         </div>
 
@@ -161,124 +206,182 @@ export default function UploadPage() {
         {files.length > 0 && (
           <div className="space-y-2">
             {files.map((file, index) => (
-              <Card key={index} className="flex items-center justify-between py-3">
+              <div key={index} className="flex items-center justify-between rounded-xl p-3 transition-all"
+                style={{ background: 'rgba(250,204,21,0.05)', border: '1px solid rgba(250,204,21,0.2)' }}>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center">
-                    <FileText className="w-4 h-4 text-green-500" />
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'rgba(250,204,21,0.15)', border: '1px solid rgba(250,204,21,0.3)' }}>
+                    <FileText className="w-4 h-4" style={{ color: '#FACC15' }} />
                   </div>
                   <div>
-                    <p className="text-white text-sm font-medium">
+                    <p className="text-white text-sm font-semibold">
                       {lang === 'EN' ? `Bill ${index + 1}` : `Bil ${index + 1}`}
+                      <span className="ml-2 text-xs font-normal" style={{ color: 'rgba(250,204,21,0.5)' }}>✓</span>
                     </p>
-                    <p className="text-gray-500 text-xs truncate max-w-48">{file.name}</p>
+                    <p className="text-xs truncate max-w-44" style={{ color: 'rgba(255,255,255,0.3)' }}>{file.name}</p>
                   </div>
                 </div>
-                <button onClick={() => removeFile(index)} className="text-gray-500 hover:text-red-400 p-1">
+                <button onClick={() => removeFile(index)} className="p-1.5 rounded-lg transition-colors"
+                  style={{ color: 'rgba(239,68,68,0.5)' }}>
                   <X className="w-4 h-4" />
                 </button>
-              </Card>
+              </div>
             ))}
           </div>
         )}
 
-        {/* Add Bill Buttons — show if still need more files */}
-        {files.length < billsRequired && !uploading && (
+        {/* Add Bill Section */}
+        {canAddMore && !uploading && (
           <div className="space-y-3">
-            <p className="text-gray-400 text-sm text-center">
-              {lang === 'EN'
-                ? `Add Bill ${files.length + 1} of ${billsRequired}`
-                : `Tambah Bil ${files.length + 1} daripada ${billsRequired}`}
+            <p className="text-sm text-center font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              {files.length === 0
+                ? (lang === 'EN' ? 'Add your TNB bill' : 'Tambah bil TNB anda')
+                : (lang === 'EN' ? `Add Bill ${files.length + 1} of ${billsRequired}` : `Tambah Bil ${files.length + 1} daripada ${billsRequired}`)}
             </p>
 
-            {/* Camera Button — Mobile primary */}
+            {/* Camera — PRIMARY for mobile */}
             <button
               onClick={() => cameraRef.current?.click()}
-              className="w-full bg-green-500/10 border-2 border-green-500/30 hover:border-green-500 rounded-2xl p-6 flex flex-col items-center gap-3 transition-all"
+              className="w-full rounded-2xl p-6 flex flex-col items-center gap-3 transition-all duration-300"
+              style={{
+                background: 'rgba(250,204,21,0.06)',
+                border: '2px solid rgba(250,204,21,0.25)',
+                boxShadow: '0 0 20px rgba(250,204,21,0.05)'
+              }}
+              onTouchStart={e => e.currentTarget.style.border = '2px solid rgba(250,204,21,0.6)'}
+              onTouchEnd={e => e.currentTarget.style.border = '2px solid rgba(250,204,21,0.25)'}
             >
-              <div className="w-14 h-14 bg-green-500 rounded-2xl flex items-center justify-center">
-                <Camera className="w-7 h-7 text-gray-950" />
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                style={{
+                  background: 'linear-gradient(135deg, #FACC15 0%, #EAB308 100%)',
+                  boxShadow: '0 0 25px rgba(250,204,21,0.4)'
+                }}>
+                <Camera className="w-8 h-8" style={{ color: '#000000' }} />
               </div>
               <div className="text-center">
-                <p className="text-white font-semibold">
-                  {lang === 'EN' ? 'Take Photo of Bill' : 'Ambil Gambar Bil'}
+                <p className="text-white font-bold text-base">
+                  {lang === 'EN' ? 'Snap Your Bill' : 'Ambil Gambar Bil'}
                 </p>
-                <p className="text-gray-400 text-xs mt-1">
-                  {lang === 'EN' ? 'Use your camera to capture the bill' : 'Gunakan kamera untuk tangkap bil'}
+                <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  {lang === 'EN' ? 'Point camera at your TNB bill' : 'Arahkan kamera ke bil TNB anda'}
                 </p>
               </div>
             </button>
-            <input
-              ref={cameraRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleCamera}
-              className="hidden"
-            />
 
-            {/* Gallery / File Button */}
+            {/* Divider */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <span className="text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
+                {lang === 'EN' ? 'or' : 'atau'}
+              </span>
+              <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
+            </div>
+
+            {/* Gallery / PDF */}
             <button
               onClick={() => galleryRef.current?.click()}
-              className="w-full bg-gray-900 border border-gray-700 hover:border-gray-500 rounded-2xl p-4 flex items-center gap-4 transition-all"
+              className="w-full rounded-2xl p-4 flex items-center gap-4 transition-all duration-300"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
-              <div className="w-10 h-10 bg-gray-800 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Image className="w-5 h-5 text-gray-400" />
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <FolderOpen className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.4)' }} />
               </div>
               <div className="text-left">
-                <p className="text-white text-sm font-medium">
-                  {lang === 'EN' ? 'Choose from Gallery / Files' : 'Pilih dari Galeri / Fail'}
+                <p className="text-white text-sm font-semibold">
+                  {lang === 'EN' ? 'Gallery or PDF File' : 'Galeri atau Fail PDF'}
                 </p>
-                <p className="text-gray-500 text-xs">
-                  {lang === 'EN' ? 'JPG, PNG or PDF accepted' : 'JPG, PNG atau PDF diterima'}
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  {lang === 'EN' ? 'JPG, PNG or PDF — Max 10MB' : 'JPG, PNG atau PDF — Maks 10MB'}
                 </p>
               </div>
             </button>
-            <input
-              ref={galleryRef}
-              type="file"
-              accept=".jpg,.jpeg,.png,.pdf"
-              onChange={handleGallery}
-              className="hidden"
-            />
           </div>
         )}
 
-        {/* Warning if 2 bills required */}
+        {/* Add More button — when 1 file added but need 2 */}
+        {files.length > 0 && canAddMore && !uploading && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => cameraRef.current?.click()}
+              className="flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition-all"
+              style={{ background: 'rgba(250,204,21,0.1)', border: '1px solid rgba(250,204,21,0.3)', color: '#FACC15' }}
+            >
+              <Plus className="w-4 h-4" />
+              <Camera className="w-4 h-4" />
+              {lang === 'EN' ? 'Add Bill 2 (Camera)' : 'Tambah Bil 2 (Kamera)'}
+            </button>
+            <button
+              onClick={() => galleryRef.current?.click()}
+              className="flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition-all"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
+            >
+              <Plus className="w-4 h-4" />
+              <FolderOpen className="w-4 h-4" />
+              {lang === 'EN' ? 'File' : 'Fail'}
+            </button>
+          </div>
+        )}
+
+        {/* Warning */}
         {billsRequired === 2 && files.length < billsRequired && (
-          <div className="flex gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3">
-            <AlertCircle className="w-4 h-4 text-yellow-500 flex-shrink-0 mt-0.5" />
-            <p className="text-yellow-500 text-xs">
+          <div className="flex gap-2 rounded-xl p-3"
+            style={{ background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.25)' }}>
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#EAB308' }} />
+            <p className="text-xs" style={{ color: '#EAB308' }}>
               {lang === 'EN'
-                ? 'Upload 2 consecutive months e.g. May + June. Bills must be from the same TNB account.'
-                : 'Muat naik 2 bulan berturut-turut cth. Mei + Jun. Bil mesti dari akaun TNB yang sama.'}
+                ? 'Need 2 consecutive months e.g. May + June. Same TNB account only.'
+                : '2 bulan berturut-turut diperlukan cth. Mei + Jun. Akaun TNB yang sama sahaja.'}
             </p>
           </div>
         )}
 
         {/* Analysing State */}
         {uploading && (
-          <Card className="text-center py-8">
-            <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-white font-semibold">{t('upload.analysing', lang)}</p>
-            <p className="text-gray-400 text-sm mt-1">{t('upload.processing', lang)}</p>
-          </Card>
-        )}
-
-        {/* Analyse Button — only show when all files ready */}
-        {filesReady && !uploading && (
-          <div className="space-y-3">
-            <Button onClick={handleUpload} fullWidth className="py-4 text-base">
-              <Zap className="w-5 h-5" />
-              {lang === 'EN' ? 'Analyse My Bills' : 'Analisis Bil Saya'}
-            </Button>
-            <p className="text-gray-600 text-xs text-center">
-              {lang === 'EN'
-                ? 'AI reads your bill and immediately discards it. We never store your bill images.'
-                : 'AI membaca bil anda dan membuangnya serta-merta. Kami tidak menyimpan imej bil anda.'}
+          <div className="rounded-2xl p-8 text-center"
+            style={{ background: 'rgba(250,204,21,0.05)', border: '1px solid rgba(250,204,21,0.2)' }}>
+            <div className="relative w-14 h-14 mx-auto mb-4">
+              <div className="w-14 h-14 rounded-full border-4 animate-spin"
+                style={{ borderColor: 'rgba(250,204,21,0.2)', borderTopColor: '#FACC15' }} />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" fill="#FACC15" />
+                </svg>
+              </div>
+            </div>
+            <p className="text-white font-bold">{t('upload.analysing', lang)}</p>
+            <p className="text-xs mt-1" style={{ color: 'rgba(250,204,21,0.6)' }}>
+              {t('upload.processing', lang)}
             </p>
           </div>
         )}
 
+        {/* Analyse Button */}
+        {filesReady && !uploading && (
+          <div className="space-y-3 pt-2">
+            <button
+              onClick={handleUpload}
+              className="w-full py-4 rounded-xl font-bold text-base transition-all duration-300"
+              style={{
+                background: 'linear-gradient(135deg, #FACC15 0%, #EAB308 100%)',
+                color: '#000000',
+                boxShadow: '0 0 25px rgba(250,204,21,0.4)'
+              }}
+            >
+              <span className="flex items-center justify-center gap-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" fill="#000000" />
+                </svg>
+                {lang === 'EN' ? 'Analyse My Bills Now' : 'Analisis Bil Saya Sekarang'}
+              </span>
+            </button>
+            <p className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.2)' }}>
+              {lang === 'EN'
+                ? '⚡ AI reads and immediately discards your bill. Never stored.'
+                : '⚡ AI membaca dan membuang bil anda serta-merta. Tidak disimpan.'}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
