@@ -6,7 +6,7 @@ const CHARGE_INFO = {
   EN: {
     generation: {
       label: 'Generation Charge (Tenaga)',
-      explanation: 'The actual cost of generating electricity from TNB power plants. Flat rate 27.03 sen/kWh on all your usage. This is the biggest chunk of your bill — and you can reduce it by using less electricity.'
+      explanation: 'The actual cost of generating electricity from TNB power plants. Flat rate 27.03 sen/kWh on all your usage. This is the biggest chunk of your bill — reduce it by using less electricity.'
     },
     capacity: {
       label: 'Capacity Charge (Kapasiti)',
@@ -18,7 +18,7 @@ const CHARGE_INFO = {
     },
     retail: {
       label: 'Retail Charge (Peruncitan)',
-      explanation: 'Fixed RM10/month fee for TNB\'s cost of your meter, billing and customer service. WAIVED if your usage is 600 kWh or below. This is a threshold you should target every month.'
+      explanation: 'Fixed RM10/month fee for TNB\'s cost of your meter, billing and customer service. WAIVED if your usage is 600 kWh or below. Target this threshold every month.'
     },
     afa: {
       label: 'AFA (Automatic Fuel Adjustment)',
@@ -26,70 +26,66 @@ const CHARGE_INFO = {
     },
     eei: {
       label: 'INS. CEKAP TENAGA (Energy Efficiency Incentive)',
-      explanation: 'Government rebate to reward energy-efficient households. 7.5 sen/kWh rebate on ALL your usage. This is money back in your pocket — the government paying you to be efficient. Keep using electricity wisely to keep this rebate.'
+      explanation: 'Government rebate to reward energy-efficient households. 7.5 sen/kWh rebate on ALL your usage. This is money back in your pocket — the government paying you to be efficient.'
     },
     kwtbb: {
       label: 'KWTBB (Renewable Energy Fund)',
-      explanation: '1.6% surcharge on your bill collected by the government via TNB. Goes to SEDA Malaysia to fund solar and hydro energy development. TNB is just the collection agent — this money goes straight to the government. You are indirectly funding Malaysia\'s renewable energy future whether you like it or not.'
+      explanation: '1.6% surcharge collected by the government via TNB. Goes to SEDA Malaysia to fund solar and hydro energy development. TNB is just the collection agent. You are indirectly funding Malaysia\'s renewable energy future whether you like it or not.'
     },
     sst: {
       label: 'Service Tax (SST)',
-      explanation: '8% Service Tax imposed ONLY on the taxable portion of your bill — the excess kWh above 600. Best way to avoid SST: stay below 600 kWh per month. If you cross 600 kWh, SST kicks in on top of Retail Charge and AFA.'
+      explanation: '8% Service Tax imposed ONLY on the taxable portion of your bill — excess kWh above 600. Best way to avoid SST: stay below 600 kWh per month.'
     },
     late: {
       label: 'Late Payment Surcharge',
-      explanation: '1% monthly penalty on outstanding amount for paying after the due date. This is 100% avoidable. Set auto-debit via myTNB or your bank.'
+      explanation: '1% monthly penalty for paying after the due date. 100% avoidable. Set auto-debit via myTNB or your bank.'
     }
   },
   BM: {
     generation: {
       label: 'Caj Tenaga (Penjanaan)',
-      explanation: 'Kos sebenar penjanaan elektrik dari loji kuasa TNB. Kadar tetap 27.03 sen/kWh pada semua penggunaan anda. Ini bahagian terbesar bil anda — kurangkan penggunaan untuk kurangkan caj ini.'
+      explanation: 'Kos sebenar penjanaan elektrik dari loji kuasa TNB. Kadar tetap 27.03 sen/kWh pada semua penggunaan anda. Bahagian terbesar bil anda — kurangkan penggunaan untuk kurangkan caj ini.'
     },
     capacity: {
       label: 'Caj Kapasiti',
-      explanation: 'Yuran untuk TNB menyelenggara loji kuasa siap sedia supaya bekalan tidak terputus. 4.55 sen/kWh. Anda bayar ini walaupun guna elektrik sedikit — kos untuk pastikan bekalan ada 24/7.'
+      explanation: 'Yuran untuk TNB menyelenggara loji kuasa siap sedia supaya bekalan tidak terputus. 4.55 sen/kWh. Anda bayar ini walaupun guna elektrik sedikit.'
     },
     network: {
       label: 'Caj Rangkaian',
-      explanation: 'Kos penyelenggaraan talian kuasa, kabel dan grid yang menyampaikan elektrik ke rumah anda. 12.85 sen/kWh. Kos tetap yang tidak boleh dielak — tetapi guna kurang bermakna jumlah keseluruhan kurang.'
+      explanation: 'Kos penyelenggaraan talian kuasa, kabel dan grid yang menyampaikan elektrik ke rumah anda. 12.85 sen/kWh. Kos tetap yang tidak boleh dielak.'
     },
     retail: {
       label: 'Caj Runcit (Peruncitan)',
-      explanation: 'Yuran tetap RM10 sebulan untuk kos meter, bil dan khidmat pelanggan TNB. DIKECUALIKAN jika penggunaan 600 kWh atau kurang. Ini sasaran yang perlu anda capai setiap bulan.'
+      explanation: 'Yuran tetap RM10 sebulan untuk kos meter, bil dan khidmat pelanggan TNB. DIKECUALIKAN jika penggunaan 600 kWh atau kurang. Sasaran yang perlu anda capai setiap bulan.'
     },
     afa: {
       label: 'AFA (Pelarasan Bahan Api Automatik)',
-      explanation: 'Pelarasan kos bahan api bulanan yang diisytiharkan Suruhanjaya Tenaga. Naik bila harga bahan api global naik, turun bila turun. Anda TIADA kawalan ke atasnya — tetapi kekal bawah 600 kWh mengecualikan anda dari AFA sepenuhnya.'
+      explanation: 'Pelarasan kos bahan api bulanan oleh Suruhanjaya Tenaga. Naik bila harga bahan api global naik. Anda TIADA kawalan — tetapi kekal bawah 600 kWh mengecualikan anda dari AFA sepenuhnya.'
     },
     eei: {
       label: 'INS. CEKAP TENAGA (Insentif Cekap Tenaga)',
-      explanation: 'Rebat kerajaan untuk menggalakkan penggunaan tenaga cekap. Rebat 7.5 sen/kWh pada SEMUA penggunaan anda. Ini wang dikembalikan kepada anda — kerajaan memberi ganjaran kerana anda cekap. Teruskan jimat untuk kekal mendapat rebat ini.'
+      explanation: 'Rebat kerajaan untuk menggalakkan penggunaan tenaga cekap. Rebat 7.5 sen/kWh pada SEMUA penggunaan anda. Wang dikembalikan kepada anda.'
     },
     kwtbb: {
       label: 'KWTBB (Dana Tenaga Boleh Baharu)',
-      explanation: 'Caj 1.6% pada bil anda yang dikutip oleh kerajaan melalui TNB. Disalurkan ke SEDA Malaysia untuk membangunkan tenaga solar dan hidro. TNB hanya ejen pengutip — wang ini terus ke kerajaan. Anda secara tidak langsung membiayai masa depan tenaga boleh baharu Malaysia sama ada suka atau tidak.'
+      explanation: 'Caj 1.6% dikutip oleh kerajaan melalui TNB. Disalurkan ke SEDA Malaysia untuk membangunkan tenaga solar dan hidro. TNB hanya ejen pengutip. Anda membiayai peralihan tenaga negara sama ada suka atau tidak.'
     },
     sst: {
       label: 'Cukai Perkhidmatan (SST)',
-      explanation: 'Cukai Perkhidmatan 8% dikenakan HANYA pada bahagian bil yang kena cukai — lebihan kWh melebihi 600. Cara terbaik elak SST: kekal di bawah 600 kWh sebulan. Jika anda melebihi 600 kWh, SST dikenakan atas Caj Runcit dan AFA.'
+      explanation: 'Cukai Perkhidmatan 8% dikenakan HANYA pada lebihan kWh melebihi 600. Cara terbaik elak SST: kekal di bawah 600 kWh sebulan.'
     },
     late: {
       label: 'Surcaj Lewat Bayar',
-      explanation: 'Penalti 1% sebulan atas jumlah tertunggak kerana bayar selepas tarikh akhir. Ini 100% boleh dielak. Tetapkan auto-debit melalui myTNB atau bank anda.'
+      explanation: 'Penalti 1% sebulan kerana bayar selepas tarikh akhir. 100% boleh dielak. Tetapkan auto-debit melalui myTNB atau bank anda.'
     }
   }
 };
 
-function ChargeRow({ label, value, color, explanation, lang }) {
+function ChargeRow({ label, value, color, explanation }) {
   const [expanded, setExpanded] = useState(false);
-
   return (
     <div className="border-b last:border-b-0" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-      <div
-        className="flex items-center justify-between py-3 cursor-pointer"
-        onClick={() => setExpanded(!expanded)}
-      >
+      <div className="flex items-center justify-between py-3 cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <div className="flex items-center gap-2 flex-1">
           <p className="text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>{label}</p>
           {expanded
@@ -117,92 +113,42 @@ function ChargeRow({ label, value, color, explanation, lang }) {
 export default function BillAutopsy({ data, lang }) {
   const {
     billingMonth, totalKwh, cajSemasa, totalAmountMyr,
-    tunggakan, breakdown, effectiveRateSen, flags,
-    billingPeriodStart, billingPeriodEnd
+    tunggakan, breakdown, flags,
+    billingPeriodStart, billingPeriodEnd, billingPeriodDays
   } = data;
 
   const info = CHARGE_INFO[lang] || CHARGE_INFO.EN;
 
   const charges = [
-    {
-      key: 'generation',
-      value: breakdown.generationCharge,
-      color: 'text-blue-400'
-    },
-    {
-      key: 'capacity',
-      value: breakdown.capacityCharge,
-      color: 'text-purple-400'
-    },
-    {
-      key: 'network',
-      value: breakdown.networkCharge,
-      color: 'text-yellow-400'
-    },
-    {
-      key: 'retail',
-      value: breakdown.retailCharge,
-      color: breakdown.retailCharge > 0 ? 'text-red-400' : 'text-gray-500'
-    },
-    {
-      key: 'afa',
-      value: breakdown.afaCharge,
-      color: breakdown.afaCharge > 0 ? 'text-orange-400' : 'text-green-400'
-    },
-    {
-      key: 'eei',
-      value: -Math.abs(breakdown.eeRebate),
-      color: 'text-green-400'
-    },
-    {
-      key: 'kwtbb',
-      value: breakdown.kwtbbCharge,
-      color: 'text-gray-400'
-    },
-    {
-      key: 'sst',
-      value: breakdown.sstCharge,
-      color: breakdown.sstCharge > 0 ? 'text-red-400' : 'text-gray-500'
-    },
-    ...(breakdown.latePaymentCharge > 0 ? [{
-      key: 'late',
-      value: breakdown.latePaymentCharge,
-      color: 'text-red-500'
-    }] : [])
+    { key: 'generation', value: breakdown.generationCharge, color: 'text-blue-400' },
+    { key: 'capacity', value: breakdown.capacityCharge, color: 'text-purple-400' },
+    { key: 'network', value: breakdown.networkCharge, color: 'text-yellow-400' },
+    { key: 'retail', value: breakdown.retailCharge, color: breakdown.retailCharge > 0 ? 'text-red-400' : 'text-gray-500' },
+    { key: 'afa', value: breakdown.afaCharge, color: breakdown.afaCharge > 0 ? 'text-orange-400' : 'text-green-400' },
+    { key: 'eei', value: -Math.abs(breakdown.eeRebate), color: 'text-green-400' },
+    { key: 'kwtbb', value: breakdown.kwtbbCharge, color: 'text-gray-400' },
+    { key: 'sst', value: breakdown.sstCharge, color: breakdown.sstCharge > 0 ? 'text-red-400' : 'text-gray-500' },
+    ...(breakdown.latePaymentCharge > 0 ? [{ key: 'late', value: breakdown.latePaymentCharge, color: 'text-red-500' }] : [])
   ];
 
   return (
     <div className="space-y-4">
-
       {/* Summary Card */}
       <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(250,204,21,0.15)' }}>
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <p className="text-xs mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              {billingMonth}
-              {billingPeriodStart && billingPeriodEnd &&
-                ` · ${billingPeriodStart} → ${billingPeriodEnd}`
-              }
-            </p>
-            <p className="text-3xl font-black text-white">
-              RM{cajSemasa?.toFixed(2)}
-            </p>
-            <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              {lang === 'EN' ? 'Current month charges' : 'Caj bulan semasa'}
-            </p>
-            <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              {totalKwh} kWh
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              {lang === 'EN' ? 'Effective Rate' : 'Kadar Efektif'}
-            </p>
-            <p className="font-black text-lg" style={{ color: '#FACC15' }}>
-              {effectiveRateSen?.toFixed(1)} sen
-            </p>
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>/kWh</p>
-          </div>
+        <div className="mb-4">
+          {/* Billing period — replaces effective rate */}
+          <p className="text-xs mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            {billingMonth}
+            {billingPeriodStart && billingPeriodEnd
+              ? ` · ${billingPeriodStart} → ${billingPeriodEnd} (${billingPeriodDays} ${lang === 'EN' ? 'days' : 'hari'})`
+              : billingPeriodDays ? ` · ${billingPeriodDays} ${lang === 'EN' ? 'days' : 'hari'}` : ''
+            }
+          </p>
+          <p className="text-3xl font-black text-white">RM{cajSemasa?.toFixed(2)}</p>
+          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            {lang === 'EN' ? 'Current month charges (Caj Semasa)' : 'Caj bulan semasa (Caj Semasa)'}
+          </p>
+          <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>{totalKwh} kWh</p>
         </div>
 
         {/* Arrears warning */}
@@ -210,9 +156,8 @@ export default function BillAutopsy({ data, lang }) {
           <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
             <p className="text-xs" style={{ color: '#ef4444' }}>
               ⚠️ {lang === 'EN'
-                ? `This bill includes RM${tunggakan?.toFixed(2)} in arrears from previous months. Total due: RM${totalAmountMyr?.toFixed(2)}`
-                : `Bil ini termasuk tunggakan RM${tunggakan?.toFixed(2)} dari bulan sebelum. Jumlah perlu dibayar: RM${totalAmountMyr?.toFixed(2)}`
-              }
+                ? `This bill includes RM${tunggakan?.toFixed(2)} arrears from previous months. Total amount due: RM${totalAmountMyr?.toFixed(2)}`
+                : `Bil ini termasuk tunggakan RM${tunggakan?.toFixed(2)} dari bulan sebelum. Jumlah perlu dibayar: RM${totalAmountMyr?.toFixed(2)}`}
             </p>
           </div>
         )}
@@ -224,9 +169,7 @@ export default function BillAutopsy({ data, lang }) {
               style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
               <TrendingDown className="w-3 h-3 flex-shrink-0" style={{ color: '#22c55e' }} />
               <p className="text-xs" style={{ color: '#22c55e' }}>
-                {lang === 'EN'
-                  ? '✅ Retail Charge waived — you used 600 kWh or less'
-                  : '✅ Caj Runcit dikecualikan — penggunaan 600 kWh atau kurang'}
+                {lang === 'EN' ? '✅ Retail Charge waived — usage 600 kWh or less' : '✅ Caj Runcit dikecualikan — penggunaan 600 kWh atau kurang'}
               </p>
             </div>
           )}
@@ -236,8 +179,8 @@ export default function BillAutopsy({ data, lang }) {
               <TrendingUp className="w-3 h-3 flex-shrink-0" style={{ color: '#ef4444' }} />
               <p className="text-xs" style={{ color: '#ef4444' }}>
                 {lang === 'EN'
-                  ? `⚠️ ${flags.excessKwh} kWh above 600 kWh threshold — Retail Charge + AFA + SST applies`
-                  : `⚠️ ${flags.excessKwh} kWh melebihi had 600 kWh — Caj Runcit + AFA + SST dikenakan`}
+                  ? `⚠️ ${flags.excessKwh} kWh above 600 kWh — Retail Charge + AFA + SST applies`
+                  : `⚠️ ${flags.excessKwh} kWh melebihi 600 kWh — Caj Runcit + AFA + SST dikenakan`}
               </p>
             </div>
           )}
@@ -246,9 +189,7 @@ export default function BillAutopsy({ data, lang }) {
               style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
               <TrendingDown className="w-3 h-3 flex-shrink-0" style={{ color: '#22c55e' }} />
               <p className="text-xs" style={{ color: '#22c55e' }}>
-                {lang === 'EN'
-                  ? '✅ Energy Efficiency Incentive applied — government rebate received'
-                  : '✅ Insentif Cekap Tenaga digunakan — rebat kerajaan diterima'}
+                {lang === 'EN' ? '✅ Energy Efficiency Incentive applied — government rebate received' : '✅ Insentif Cekap Tenaga digunakan — rebat kerajaan diterima'}
               </p>
             </div>
           )}
@@ -257,15 +198,15 @@ export default function BillAutopsy({ data, lang }) {
               style={{ background: 'rgba(250,204,21,0.08)', border: '1px solid rgba(250,204,21,0.2)' }}>
               <p className="text-xs" style={{ color: '#FACC15' }}>
                 {lang === 'EN'
-                  ? '⚡ You are close to 600 kWh threshold. Reduce usage to waive Retail Charge next month.'
-                  : '⚡ Anda hampir had 600 kWh. Kurangkan penggunaan untuk tidak kena Caj Runcit bulan depan.'}
+                  ? '⚡ Close to 600 kWh threshold. Reduce usage to waive Retail Charge next month.'
+                  : '⚡ Hampir had 600 kWh. Kurangkan penggunaan untuk tidak kena Caj Runcit bulan depan.'}
               </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Bill Breakdown — tap each charge to learn more */}
+      {/* Bill Breakdown */}
       <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="px-4 pt-4 pb-2">
           <p className="text-white font-bold text-sm">
@@ -275,7 +216,6 @@ export default function BillAutopsy({ data, lang }) {
             {lang === 'EN' ? 'Tap each charge to understand what you\'re paying for' : 'Ketik setiap caj untuk faham apa yang anda bayar'}
           </p>
         </div>
-
         <div className="px-4">
           {charges.map((charge, i) => (
             <ChargeRow
@@ -284,11 +224,8 @@ export default function BillAutopsy({ data, lang }) {
               value={charge.value}
               color={charge.color}
               explanation={info[charge.key]?.explanation || ''}
-              lang={lang}
             />
           ))}
-
-          {/* Total */}
           <div className="flex items-center justify-between py-4"
             style={{ borderTop: '2px solid rgba(250,204,21,0.2)' }}>
             <p className="text-white font-black">
@@ -298,29 +235,24 @@ export default function BillAutopsy({ data, lang }) {
               RM{cajSemasa?.toFixed(2)}
             </p>
           </div>
-
-          {/* Arrears line if exists */}
           {tunggakan > 0 && (
-            <div className="flex items-center justify-between pb-4" style={{ marginTop: '-8px' }}>
-              <p className="text-sm" style={{ color: 'rgba(239,68,68,0.8)' }}>
-                {lang === 'EN' ? '+ Arrears (Tunggakan)' : '+ Tunggakan'}
-              </p>
-              <p className="font-semibold text-sm" style={{ color: '#ef4444' }}>
-                RM{tunggakan?.toFixed(2)}
-              </p>
-            </div>
-          )}
-
-          {tunggakan > 0 && (
-            <div className="flex items-center justify-between pb-4"
-              style={{ borderTop: '1px solid rgba(239,68,68,0.2)', paddingTop: '12px' }}>
-              <p className="text-white font-bold">
-                {lang === 'EN' ? 'Total Amount Due' : 'Jumlah Perlu Dibayar'}
-              </p>
-              <p className="font-black text-lg text-white">
-                RM{totalAmountMyr?.toFixed(2)}
-              </p>
-            </div>
+            <>
+              <div className="flex items-center justify-between pb-3">
+                <p className="text-sm" style={{ color: 'rgba(239,68,68,0.8)' }}>
+                  {lang === 'EN' ? '+ Arrears (Tunggakan)' : '+ Tunggakan'}
+                </p>
+                <p className="font-semibold text-sm" style={{ color: '#ef4444' }}>
+                  RM{tunggakan?.toFixed(2)}
+                </p>
+              </div>
+              <div className="flex items-center justify-between pb-4"
+                style={{ borderTop: '1px solid rgba(239,68,68,0.2)', paddingTop: '12px' }}>
+                <p className="text-white font-bold">
+                  {lang === 'EN' ? 'Total Amount Due' : 'Jumlah Perlu Dibayar'}
+                </p>
+                <p className="font-black text-lg text-white">RM{totalAmountMyr?.toFixed(2)}</p>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -334,7 +266,7 @@ export default function BillAutopsy({ data, lang }) {
           {[
             {
               label: lang === 'EN' ? '✅ Reduce kWh usage' : '✅ Kurangkan penggunaan kWh',
-              desc: lang === 'EN' ? 'Directly reduces Generation, Capacity, Network and EEI amounts' : 'Mengurangkan caj Tenaga, Kapasiti, Rangkaian dan jumlah EEI secara langsung'
+              desc: lang === 'EN' ? 'Directly reduces Generation, Capacity, Network charges' : 'Mengurangkan caj Tenaga, Kapasiti, Rangkaian secara langsung'
             },
             {
               label: lang === 'EN' ? '✅ Stay below 600 kWh' : '✅ Kekal bawah 600 kWh',
@@ -342,7 +274,7 @@ export default function BillAutopsy({ data, lang }) {
             },
             {
               label: lang === 'EN' ? '❌ Cannot control' : '❌ Tidak boleh kawal',
-              desc: lang === 'EN' ? 'AFA rate, KWTBB, SST rate — set by government' : 'Kadar AFA, KWTBB, kadar SST — ditetapkan oleh kerajaan'
+              desc: lang === 'EN' ? 'AFA rate, KWTBB 1.6%, SST 8% — set by government' : 'Kadar AFA, KWTBB 1.6%, SST 8% — ditetapkan kerajaan'
             }
           ].map((item, i) => (
             <div key={i}>

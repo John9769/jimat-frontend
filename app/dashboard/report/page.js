@@ -76,9 +76,11 @@ function ReportContent() {
 
   const handleShare = () => {
     const saving = report?.bleeder?.totalPotentialSavingMyr || 0;
+    // Use Vercel URL until domain is confirmed
+    const url = 'jimat-frontend.vercel.app';
     const text = lang === 'EN'
-      ? `I could save RM${saving.toFixed(2)}/month on my TNB bill! Analysed with JIMAT — jimat.my`
-      : `Saya boleh jimat RM${saving.toFixed(2)}/bulan pada bil TNB saya! Dianalisis dengan JIMAT — jimat.my`;
+      ? `I could save RM${saving.toFixed(2)}/month on my TNB bill! Analysed with JIMAT — ${url}`
+      : `Saya boleh jimat RM${saving.toFixed(2)}/bulan pada bil TNB saya! Dianalisis dengan JIMAT — ${url}`;
     if (navigator.share) {
       navigator.share({ title: 'JIMAT Report', text });
     } else {
@@ -117,6 +119,8 @@ function ReportContent() {
     afa: t('report.afa', lang),
   };
 
+  const ledger = report.savingsLedger;
+
   return (
     <div className="min-h-screen relative" style={{ background: '#000000' }}>
       <ElectricBackground />
@@ -140,7 +144,7 @@ function ReportContent() {
         </div>
         <button
           onClick={handleShare}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
           style={{ background: 'rgba(250,204,21,0.1)', border: '1px solid rgba(250,204,21,0.3)', color: '#FACC15' }}
         >
           <Share2 className="w-3.5 h-3.5" />
@@ -187,38 +191,62 @@ function ReportContent() {
           <AfaWatch data={report.afaWatch} lang={lang} />
         )}
 
-        {/* Savings Ledger */}
-        {report.savingsLedger && report.savingsLedger.monthsOnJimat > 0 && (
+        {/* Savings Ledger — fixed */}
+        {ledger && ledger.monthsAnalysed > 0 && (
           <div className="mt-6 rounded-2xl p-4"
             style={{ background: 'rgba(250,204,21,0.05)', border: '1px solid rgba(250,204,21,0.15)' }}>
-            <p className="font-semibold mb-4 text-white">
+            <p className="font-semibold mb-1 text-white">
               💰 {lang === 'EN' ? 'Your Savings Ledger' : 'Lejar Penjimatan Anda'}
             </p>
+            <p className="text-xs mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              {lang === 'EN'
+                ? `Based on ${ledger.monthsAnalysed} month(s) analysed with JIMAT`
+                : `Berdasarkan ${ledger.monthsAnalysed} bulan dianalisis dengan JIMAT`}
+            </p>
+
+            {/* Potential saving per month — the main number */}
+            <div className="rounded-xl p-3 mb-3"
+              style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                {lang === 'EN' ? 'Potential saving identified' : 'Potensi penjimatan dikenal pasti'}
+              </p>
+              <p className="text-2xl font-black mt-1" style={{ color: '#22c55e' }}>
+                RM{ledger.potentialSavingPerMonth?.toFixed(2)}/
+                {lang === 'EN' ? 'month' : 'bulan'}
+              </p>
+            </div>
+
             <div className="grid grid-cols-3 gap-3">
               {[
                 {
-                  value: report.savingsLedger.monthsOnJimat,
-                  label: lang === 'EN' ? 'Months' : 'Bulan',
+                  value: ledger.monthsAnalysed,
+                  label: lang === 'EN' ? 'Months analysed' : 'Bulan dianalisis',
                   color: '#FACC15'
                 },
                 {
-                  value: `RM${report.savingsLedger.totalPotentialSavedMyr?.toFixed(0)}`,
-                  label: lang === 'EN' ? 'Potential Saved' : 'Jimat Berpotensi',
-                  color: '#22c55e'
+                  value: `RM${ledger.totalPaidToJimatMyr?.toFixed(2)}`,
+                  label: lang === 'EN' ? 'Paid to JIMAT' : 'Dibayar ke JIMAT',
+                  color: 'rgba(255,255,255,0.5)'
                 },
                 {
-                  value: `RM${report.savingsLedger.netGainMyr?.toFixed(0)}`,
-                  label: lang === 'EN' ? 'Net Gain' : 'Keuntungan Bersih',
+                  value: `RM${ledger.netGainMyr?.toFixed(2)}`,
+                  label: lang === 'EN' ? 'Net gain if you act' : 'Keuntungan bersih jika bertindak',
                   color: '#60a5fa'
                 }
               ].map((item, i) => (
                 <div key={i} className="text-center rounded-xl p-3"
                   style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <p className="font-bold text-lg" style={{ color: item.color }}>{item.value}</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>{item.label}</p>
+                  <p className="font-bold text-base" style={{ color: item.color }}>{item.value}</p>
+                  <p className="text-xs mt-0.5 leading-tight" style={{ color: 'rgba(255,255,255,0.3)' }}>{item.label}</p>
                 </div>
               ))}
             </div>
+
+            <p className="text-xs mt-3" style={{ color: 'rgba(255,255,255,0.2)' }}>
+              {lang === 'EN'
+                ? '* Net gain = potential monthly saving minus total paid to JIMAT'
+                : '* Keuntungan bersih = potensi jimat bulanan tolak jumlah dibayar ke JIMAT'}
+            </p>
           </div>
         )}
 
@@ -230,13 +258,12 @@ function ReportContent() {
           </p>
         </div>
 
-        {/* SSM Footer */}
         <p className="text-center text-xs mt-6" style={{ color: 'rgba(255,255,255,0.1)' }}>
           JIMAT by AWAS Premium Resources · SSM 202603141446
         </p>
       </div>
 
-      {/* Fixed Bottom Share Button */}
+      {/* Fixed Bottom Share */}
       <div className="fixed bottom-0 left-0 right-0 p-4 z-20"
         style={{ background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(10px)', borderTop: '1px solid rgba(250,204,21,0.1)' }}>
         <div className="max-w-lg mx-auto">
