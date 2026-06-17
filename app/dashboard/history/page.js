@@ -5,7 +5,15 @@ import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 import { getBillingHistory } from '@/lib/api';
 import { t } from '@/lib/i18n';
-import { ArrowLeft, Lock, TrendingDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Lock, TrendingDown, ChevronRight, CheckCircle } from 'lucide-react';
+
+const BAND_CONFIG = {
+  EXCELLENT: { emoji: '🟢', color: '#22c55e', label: { EN: 'Excellent', BM: 'Cemerlang' } },
+  GOOD:      { emoji: '🟡', color: '#eab308', label: { EN: 'Good', BM: 'Baik' } },
+  FAIR:      { emoji: '🟠', color: '#f97316', label: { EN: 'Fair', BM: 'Sederhana' } },
+  ATTENTION: { emoji: '🔴', color: '#ef4444', label: { EN: 'Attention', BM: 'Perhatian' } },
+  CRITICAL:  { emoji: '⚫', color: '#6b7280', label: { EN: 'Critical', BM: 'Kritikal' } }
+};
 
 function ElectricBackground() {
   const [particles] = useState(() =>
@@ -23,13 +31,7 @@ function ElectricBackground() {
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" style={{ background: '#000000' }}>
       {particles.map(p => (
         <div key={p.id} className="absolute rounded-full animate-pulse"
-          style={{
-            left: p.left, top: p.top,
-            width: p.size, height: p.size,
-            background: p.color, opacity: 0.15,
-            animationDuration: `${p.duration}s`,
-            animationDelay: `${p.delay}s`
-          }} />
+          style={{ left: p.left, top: p.top, width: p.size, height: p.size, background: p.color, opacity: 0.15, animationDuration: `${p.duration}s`, animationDelay: `${p.delay}s` }} />
       ))}
     </div>
   );
@@ -54,18 +56,17 @@ export default function HistoryPage() {
   if (loading || pageLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#000000' }}>
-        <div className="text-center">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse"
-            style={{ background: 'rgba(250,204,21,0.1)', border: '1px solid rgba(250,204,21,0.3)' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" fill="#FACC15" />
-            </svg>
-          </div>
-          <p className="text-sm animate-pulse" style={{ color: 'rgba(250,204,21,0.6)' }}>Loading...</p>
+        <div className="w-10 h-10 rounded-full animate-pulse flex items-center justify-center"
+          style={{ background: 'rgba(250,204,21,0.1)', border: '1px solid rgba(250,204,21,0.3)' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" fill="#FACC15" />
+          </svg>
         </div>
       </div>
     );
   }
+
+  const unlockedCount = records.filter(r => r.isUnlocked).length;
 
   return (
     <div className="min-h-screen relative" style={{ background: '#000000' }}>
@@ -89,8 +90,6 @@ export default function HistoryPage() {
       </div>
 
       <div className="relative z-10 max-w-lg mx-auto px-4 py-6">
-
-        {/* Title */}
         <div className="mb-6">
           <h1 className="text-xl font-bold text-white mb-1">{t('dash.history', lang)}</h1>
           <p className="text-sm" style={{ color: 'rgba(250,204,21,0.6)' }}>
@@ -114,81 +113,99 @@ export default function HistoryPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {records.map((record, index) => (
-              <div
-                key={record.id}
-                onClick={() => record.isUnlocked
-                  ? router.push(`/dashboard/report?id=${record.id}`)
-                  : router.push(`/dashboard/teaser?id=${record.id}&amount=${record.teaserAmount || 0}&price=6.99`)
-                }
-                className="rounded-2xl p-4 flex items-center justify-between cursor-pointer transition-all duration-300"
-                style={{
-                  background: record.isUnlocked
-                    ? 'rgba(34,197,94,0.04)'
-                    : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${record.isUnlocked
-                    ? 'rgba(34,197,94,0.2)'
-                    : 'rgba(250,204,21,0.1)'}`
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  {/* Icon */}
-                  <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{
-                      background: record.isUnlocked
-                        ? 'rgba(34,197,94,0.1)'
-                        : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${record.isUnlocked
-                        ? 'rgba(34,197,94,0.3)'
-                        : 'rgba(255,255,255,0.08)'}`
-                    }}>
-                    {record.isUnlocked
-                      ? <TrendingDown className="w-5 h-5" style={{ color: '#22c55e' }} />
-                      : <Lock className="w-5 h-5" style={{ color: 'rgba(250,204,21,0.4)' }} />
-                    }
-                  </div>
+            {records.map((record) => {
+              const band = record.healthBand ? BAND_CONFIG[record.healthBand] : null;
+              const cajSemasa = record.cajSemasa || record.totalAmountMyr;
 
-                  {/* Info */}
-                  <div>
-                    <p className="text-white font-bold">{record.billingMonth}</p>
-                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                      {record.totalKwh} kWh — RM{record.totalAmountMyr?.toFixed(2)}
-                    </p>
-                    {!record.isUnlocked && record.teaserAmount && (
-                      <p className="text-xs mt-0.5" style={{ color: '#FACC15' }}>
-                        ⚡ {lang === 'EN'
-                          ? `Est. save RM${record.teaserAmount?.toFixed(2)}/month`
-                          : `Jimat anggaran RM${record.teaserAmount?.toFixed(2)}/bulan`}
-                      </p>
-                    )}
+              return (
+                <div
+                  key={record.id}
+                  onClick={() => record.isUnlocked
+                    ? router.push(`/dashboard/report?id=${record.id}`)
+                    : router.push(`/dashboard/teaser?id=${record.id}&amount=${record.teaserAmount || 0}`)
+                  }
+                  className="rounded-2xl p-4 cursor-pointer transition-all duration-300"
+                  style={{
+                    background: record.isUnlocked ? 'rgba(34,197,94,0.04)' : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${record.isUnlocked ? 'rgba(34,197,94,0.2)' : 'rgba(250,204,21,0.1)'}`
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {/* Icon */}
+                      <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{
+                          background: record.isUnlocked ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.04)',
+                          border: `1px solid ${record.isUnlocked ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.08)'}`
+                        }}>
+                        {record.isUnlocked
+                          ? <TrendingDown className="w-5 h-5" style={{ color: '#22c55e' }} />
+                          : <Lock className="w-5 h-5" style={{ color: 'rgba(250,204,21,0.4)' }} />
+                        }
+                      </div>
+
+                      {/* Info */}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-white font-bold">{record.billingMonth}</p>
+                          {/* Mission completed badge */}
+                          {record.missionCompleted && (
+                            <span className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full"
+                              style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e' }}>
+                              <CheckCircle className="w-3 h-3" />
+                              {lang === 'EN' ? 'Mission ✓' : 'Misi ✓'}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                          {record.totalKwh} kWh — RM{cajSemasa?.toFixed(2)}
+                        </p>
+                        {/* Health score or teaser */}
+                        {record.isUnlocked && band && record.healthScore !== null ? (
+                          <p className="text-xs mt-0.5" style={{ color: band.color }}>
+                            {band.emoji} {record.healthScore}/100 — {band.label[lang] || band.label.EN}
+                          </p>
+                        ) : !record.isUnlocked && record.teaserAmount ? (
+                          <p className="text-xs mt-0.5" style={{ color: '#FACC15' }}>
+                            ⚡ {lang === 'EN'
+                              ? `Est. save RM${record.teaserAmount?.toFixed(2)}/month`
+                              : `Jimat anggaran RM${record.teaserAmount?.toFixed(2)}/bulan`}
+                          </p>
+                        ) : null}
+                        {/* Reference month context */}
+                        {record.referenceMonth && (
+                          <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                            {lang === 'EN'
+                              ? `Compared with ${record.referenceMonth}`
+                              : `Dibanding dengan ${record.referenceMonth}`}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Status + Arrow */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs px-2.5 py-1 rounded-full font-medium"
+                        style={{
+                          background: record.isUnlocked ? 'rgba(34,197,94,0.1)' : 'rgba(250,204,21,0.08)',
+                          border: `1px solid ${record.isUnlocked ? 'rgba(34,197,94,0.3)' : 'rgba(250,204,21,0.2)'}`,
+                          color: record.isUnlocked ? '#22c55e' : '#FACC15'
+                        }}>
+                        {record.isUnlocked
+                          ? (lang === 'EN' ? 'Unlocked' : 'Dibuka')
+                          : (lang === 'EN' ? 'Locked' : 'Dikunci')}
+                      </span>
+                      <ChevronRight className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.2)' }} />
+                    </div>
                   </div>
                 </div>
+              );
+            })}
 
-                {/* Status + Arrow */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs px-2.5 py-1 rounded-full font-medium"
-                    style={{
-                      background: record.isUnlocked
-                        ? 'rgba(34,197,94,0.1)'
-                        : 'rgba(250,204,21,0.08)',
-                      border: `1px solid ${record.isUnlocked
-                        ? 'rgba(34,197,94,0.3)'
-                        : 'rgba(250,204,21,0.2)'}`,
-                      color: record.isUnlocked ? '#22c55e' : '#FACC15'
-                    }}>
-                    {record.isUnlocked
-                      ? (lang === 'EN' ? 'Unlocked' : 'Dibuka')
-                      : (lang === 'EN' ? 'Locked' : 'Dikunci')}
-                  </span>
-                  <ChevronRight className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.2)' }} />
-                </div>
-              </div>
-            ))}
-
-            {/* Summary if has records */}
+            {/* Summary */}
             <div className="rounded-2xl p-4 mt-2"
               style={{ background: 'rgba(250,204,21,0.04)', border: '1px solid rgba(250,204,21,0.1)' }}>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-2">
                 <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
                   {lang === 'EN' ? 'Total bills analysed' : 'Jumlah bil dianalisis'}
                 </p>
@@ -196,12 +213,12 @@ export default function HistoryPage() {
                   {records.length} {lang === 'EN' ? 'months' : 'bulan'}
                 </p>
               </div>
-              <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center justify-between">
                 <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
                   {lang === 'EN' ? 'Reports unlocked' : 'Laporan dibuka'}
                 </p>
                 <p className="text-sm font-bold" style={{ color: '#22c55e' }}>
-                  {records.filter(r => r.isUnlocked).length}/{records.length}
+                  {unlockedCount}/{records.length}
                 </p>
               </div>
             </div>
