@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
-import { getChainInfo, scanBills } from '@/lib/api';
+import { getChainInfo, scanBills, getProfile } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { ArrowLeft, Camera, FolderOpen, X, FileText, AlertCircle, Plus, Zap } from 'lucide-react';
 
@@ -135,9 +135,22 @@ export default function UploadPage() {
   useEffect(() => {
     if (!loading && !user) router.replace('/login');
     if (user) {
-      getChainInfo()
-        .then(res => setChain(res.data))
-        .catch(() => toast.error('Failed to load chain info'))
+      Promise.all([getChainInfo(), getProfile()])
+        .then(([chainRes, profileRes]) => {
+          setChain(chainRes.data);
+          // Gate — no appliances = force onboarding first
+          const applianceCount = profileRes.data.user.appliances?.length || 0;
+          if (applianceCount === 0) {
+            toast(
+              lang === 'EN'
+                ? 'Please declare your appliances first — helps JIMAT calculate your savings'
+                : 'Sila isytihar peralatan anda dahulu — membantu JIMAT kira penjimatan anda',
+              { icon: '⚡', duration: 4000 }
+            );
+            router.replace('/dashboard/onboarding');
+          }
+        })
+        .catch(() => toast.error('Failed to load'))
         .finally(() => setPageLoading(false));
     }
   }, [user, loading]);
