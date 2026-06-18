@@ -231,6 +231,24 @@ export default function UploadPage() {
       return;
     }
 
+    // Gate — check appliances before scanning
+    try {
+      const profileRes = await getProfile();
+      const applianceCount = profileRes.data.user.appliances?.length || 0;
+      if (applianceCount === 0) {
+        toast(
+          lang === 'EN'
+            ? '⚡ Please declare your appliances first — JIMAT needs this to calculate your savings'
+            : '⚡ Sila isytihar peralatan anda dahulu — JIMAT perlukan ini untuk kira penjimatan anda',
+          { duration: 4000 }
+        );
+        router.push('/dashboard/onboarding');
+        return;
+      }
+    } catch (e) {
+      // Profile fetch failed — allow to proceed, don't block
+    }
+
     setScanning(true);
     try {
       const formData = new FormData();
