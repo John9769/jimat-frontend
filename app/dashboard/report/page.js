@@ -103,6 +103,7 @@ function ReportContent() {
 
   const ledger = report.savingsLedger;
   const potentialSaving = ledger?.potentialSavingPerMonth || 0;
+  const afaStory = report.comparison?.afaStory;
 
   const tabLabels = {
     autopsy: lang === 'EN' ? 'Bill Autopsy' : 'Bedah Siasat Bil',
@@ -163,9 +164,35 @@ function ReportContent() {
 
         {activeTab === 'autopsy' && report.billAutopsy && (
           <>
+            {/* AFA Story — THE WOW — first thing user sees */}
+            {afaStory?.explanation && (
+              <div className="rounded-2xl p-4 mb-4"
+                style={{
+                  background: afaStory.billUpButBehaviourOk
+                    ? 'rgba(34,197,94,0.08)'
+                    : report.comparison?.improved
+                      ? 'rgba(34,197,94,0.08)'
+                      : 'rgba(250,204,21,0.06)',
+                  border: `1px solid ${afaStory.billUpButBehaviourOk || report.comparison?.improved
+                    ? 'rgba(34,197,94,0.3)'
+                    : 'rgba(250,204,21,0.2)'}`
+                }}>
+                <p className="text-base font-black text-white mb-2">
+                  {afaStory.billUpButBehaviourOk
+                    ? (lang === 'EN' ? '✅ Bukan Salah Anda' : '✅ Bukan Salah Anda')
+                    : report.comparison?.improved
+                      ? (lang === 'EN' ? '✅ Great Progress!' : '✅ Tahniah!')
+                      : (lang === 'EN' ? '⚠️ Action Needed' : '⚠️ Perlu Tindakan')}
+                </p>
+                <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                  {afaStory.explanation}
+                </p>
+              </div>
+            )}
+
             <BillAutopsy data={report.billAutopsy} lang={lang} />
 
-            {/* Savings message — Bill Autopsy only */}
+            {/* One line savings CTA */}
             {potentialSaving > 0 && (
               <div className="mt-4 rounded-2xl p-4"
                 style={{ background: 'rgba(250,204,21,0.05)', border: '1px solid rgba(250,204,21,0.15)' }}>
