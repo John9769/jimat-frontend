@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 import { confirmBills } from '@/lib/api';
-import { ArrowLeft, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, CheckCircle, RefreshCw } from 'lucide-react';
 
 function ElectricBackground() {
   const [particles] = useState(() =>
@@ -55,25 +55,15 @@ export default function ConfirmPage() {
 
   useEffect(() => {
     if (!loading && !user) { router.replace('/login'); return; }
-
-    // Load OCR results from sessionStorage
     const stored = sessionStorage.getItem('jimat_ocr_results');
     const storedPricing = sessionStorage.getItem('jimat_pricing');
-
-    if (!stored) {
-      // No OCR data — go back to upload
-      router.replace('/dashboard/upload');
-      return;
-    }
-
+    if (!stored) { router.replace('/dashboard/upload'); return; }
     try {
       setOcrResults(JSON.parse(stored));
       if (storedPricing) setPricing(JSON.parse(storedPricing));
     } catch (e) {
-      router.replace('/dashboard/upload');
-      return;
+      router.replace('/dashboard/upload'); return;
     }
-
     setTimeout(() => setMounted(true), 100);
   }, [user, loading]);
 
@@ -81,13 +71,29 @@ export default function ConfirmPage() {
     setConfirming(true);
     try {
       const res = await confirmBills({ ocrResults });
-      const { teaser, pricing: responsePricing } = res.data;
+      const { teaser } = res.data;
 
-      // Clear sessionStorage
       sessionStorage.removeItem('jimat_ocr_results');
       sessionStorage.removeItem('jimat_pricing');
 
       toast.success(lang === 'EN' ? 'Analysis ready!' : 'Analisis bersedia!');
+
+      // MONTHLY — check coverage gap
+      const coveragePercent = teaser.coveragePercent || 100;
+      const coverageGapKwh = teaser.coverageGapKwh || 0;
+
+      if (coveragePercent < 80 && coverageGapKwh > 0) {
+        sessionStorage.setItem('jimat_gap_record_id', teaser.recordId);
+        toast(
+          lang === 'EN'
+            ? `⚡ ${coverageGapKwh.toFixed(0)} kWh unaccounted — add missing appliances for a more accurate report`
+            : `⚡ ${coverageGapKwh.toFixed(0)} kWh tidak dapat dijelaskan — tambah peralatan yang tiada untuk laporan lebih tepat`,
+          { duration: 5000 }
+        );
+        router.push('/dashboard/onboarding');
+        return;
+      }
+
       router.push(`/dashboard/teaser?id=${teaser.recordId}`);
 
     } catch (err) {
@@ -97,7 +103,6 @@ export default function ConfirmPage() {
   };
 
   const handleRetry = () => {
-    // Clear OCR data and go back to upload
     sessionStorage.removeItem('jimat_ocr_results');
     sessionStorage.removeItem('jimat_pricing');
     router.replace('/dashboard/upload');
@@ -112,7 +117,6 @@ export default function ConfirmPage() {
     );
   }
 
-  // Show only the latest bill for confirmation (last in sorted array)
   const latestOcr = ocrResults[ocrResults.length - 1];
   const cajSemasa = latestOcr.cajSemasa || latestOcr.rawOcr?.cajSemasa || 0;
   const totalKwh = latestOcr.totalKwh || latestOcr.rawOcr?.totalKwh || 0;
@@ -168,7 +172,6 @@ export default function ConfirmPage() {
     <div className="min-h-screen relative" style={{ background: '#000000' }}>
       <ElectricBackground />
 
-      {/* Header */}
       <div className="relative z-10 px-4 py-3 flex items-center gap-3 sticky top-0"
         style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(250,204,21,0.1)' }}>
         <button onClick={handleRetry} style={{ color: 'rgba(250,204,21,0.6)' }}>
@@ -185,11 +188,9 @@ export default function ConfirmPage() {
         </div>
       </div>
 
-      <div
-        className="relative z-10 max-w-lg mx-auto px-4 py-6 pb-40 space-y-5 transition-all duration-700"
-        style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(20px)' }}
-      >
-        {/* Title */}
+      <div className="relative z-10 max-w-lg mx-auto px-4 py-6 pb-40 space-y-5 transition-all duration-700"
+        style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(20px)' }}>
+
         <div>
           <h1 className="text-xl font-bold text-white mb-1">
             {lang === 'EN' ? '🔍 Verify Your Bill' : '🔍 Sahkan Bil Anda'}
@@ -201,7 +202,6 @@ export default function ConfirmPage() {
           </p>
         </div>
 
-        {/* Multiple bills indicator */}
         {ocrResults.length > 1 && (
           <div className="rounded-xl p-3"
             style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
@@ -216,7 +216,6 @@ export default function ConfirmPage() {
           </div>
         )}
 
-        {/* Extracted Values */}
         <div className="rounded-2xl overflow-hidden"
           style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(250,204,21,0.15)' }}>
           <div className="px-4 pt-4 pb-2">
@@ -224,16 +223,13 @@ export default function ConfirmPage() {
               {lang === 'EN' ? '📋 What We Read From Your Bill' : '📋 Apa Yang Kami Baca Dari Bil Anda'}
             </p>
           </div>
-
           <div className="px-4 pb-4 space-y-1">
             {fields.map((field, i) => (
               <div key={i} className="py-3"
                 style={{ borderBottom: i < fields.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                      {field.label}
-                    </p>
+                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>{field.label}</p>
                     {field.critical && (
                       <span className="text-xs px-1.5 py-0.5 rounded-full"
                         style={{ background: 'rgba(250,204,21,0.1)', color: 'rgba(250,204,21,0.6)', fontSize: '10px' }}>
@@ -243,15 +239,12 @@ export default function ConfirmPage() {
                   </div>
                   <p className="font-bold text-white text-right">{field.value}</p>
                 </div>
-                <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>
-                  {field.hint}
-                </p>
+                <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>{field.hint}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Instruction */}
         <div className="rounded-2xl p-4"
           style={{ background: 'rgba(250,204,21,0.05)', border: '1px solid rgba(250,204,21,0.15)' }}>
           <p className="text-sm font-bold mb-2" style={{ color: '#FACC15' }}>
@@ -264,35 +257,26 @@ export default function ConfirmPage() {
           </p>
         </div>
 
-        {/* PDF tip if image was uploaded */}
         <div className="rounded-xl p-3"
           style={{ background: 'rgba(96,165,250,0.05)', border: '1px solid rgba(96,165,250,0.15)' }}>
           <p className="text-xs" style={{ color: 'rgba(96,165,250,0.7)' }}>
             💡 {lang === 'EN'
-              ? 'If values don\'t match — go back and upload PDF from TNB email or myTNB app for better accuracy.'
+              ? "If values don't match — go back and upload PDF from TNB email or myTNB app for better accuracy."
               : 'Jika nilai tidak sepadan — kembali dan muat naik PDF dari email TNB atau apl myTNB untuk ketepatan lebih baik.'}
           </p>
         </div>
       </div>
 
-      {/* Fixed Bottom Buttons */}
       <div className="fixed bottom-0 left-0 right-0 p-4 z-20"
         style={{ background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(10px)', borderTop: '1px solid rgba(250,204,21,0.1)' }}>
         <div className="max-w-lg mx-auto space-y-3">
-
-          {/* Confirm */}
-          <button
-            onClick={handleConfirm}
-            disabled={confirming}
+          <button onClick={handleConfirm} disabled={confirming}
             className="w-full py-4 rounded-xl font-bold text-base transition-all duration-300"
             style={{
-              background: confirming
-                ? 'rgba(250,204,21,0.3)'
-                : 'linear-gradient(135deg, #FACC15 0%, #EAB308 100%)',
+              background: confirming ? 'rgba(250,204,21,0.3)' : 'linear-gradient(135deg, #FACC15 0%, #EAB308 100%)',
               color: '#000000',
               boxShadow: confirming ? 'none' : '0 0 25px rgba(250,204,21,0.4)'
-            }}
-          >
+            }}>
             {confirming ? (
               <span className="flex items-center justify-center gap-2">
                 <span className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
@@ -306,22 +290,12 @@ export default function ConfirmPage() {
             )}
           </button>
 
-          {/* Retry */}
-          <button
-            onClick={handleRetry}
-            disabled={confirming}
+          <button onClick={handleRetry} disabled={confirming}
             className="w-full py-3.5 rounded-xl font-bold text-sm transition-all duration-300"
-            style={{
-              background: 'transparent',
-              border: '1px solid rgba(239,68,68,0.3)',
-              color: 'rgba(239,68,68,0.7)'
-            }}
-          >
+            style={{ background: 'transparent', border: '1px solid rgba(239,68,68,0.3)', color: 'rgba(239,68,68,0.7)' }}>
             <span className="flex items-center justify-center gap-2">
               <RefreshCw className="w-4 h-4" />
-              {lang === 'EN'
-                ? '❌ Values wrong — Upload again'
-                : '❌ Nilai salah — Muat naik semula'}
+              {lang === 'EN' ? '❌ Values wrong — Upload again' : '❌ Nilai salah — Muat naik semula'}
             </span>
           </button>
 

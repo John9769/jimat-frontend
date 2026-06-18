@@ -3,9 +3,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
-import { getChainInfo, scanBills, getProfile } from '@/lib/api';
+import { getChainInfo, scanBills } from '@/lib/api';
 import { t } from '@/lib/i18n';
-import { ArrowLeft, Camera, FolderOpen, X, FileText, AlertCircle, Plus, Zap } from 'lucide-react';
+import { ArrowLeft, Camera, FolderOpen, X, FileText, AlertCircle } from 'lucide-react';
 
 function ElectricBackground() {
   const [particles] = useState(() =>
@@ -35,88 +35,62 @@ function ElectricBackground() {
   );
 }
 
-// ── CANVAS IMAGE ENHANCEMENT ─────────────────────────────
-// Converts raw camera photo to high-contrast grayscale
-// Dramatically improves Claude OCR accuracy on TNB bills
 const enhanceImageForOCR = (file) => {
   return new Promise((resolve) => {
-    // PDFs — no enhancement needed, pass through directly
-    if (file.type === 'application/pdf') {
-      resolve(file);
-      return;
-    }
-
+    if (file.type === 'application/pdf') { resolve(file); return; }
     const img = new Image();
     const url = URL.createObjectURL(file);
-
     img.onload = () => {
       const canvas = document.createElement('canvas');
-
-      // Scale down if too large — reduces upload time
-      // Max 2000px on longest side — still plenty for OCR
       const maxDim = 2000;
       let { width, height } = img;
       if (width > maxDim || height > maxDim) {
-        if (width > height) {
-          height = Math.round((height / width) * maxDim);
-          width = maxDim;
-        } else {
-          width = Math.round((width / height) * maxDim);
-          height = maxDim;
-        }
+        if (width > height) { height = Math.round((height / width) * maxDim); width = maxDim; }
+        else { width = Math.round((width / height) * maxDim); height = maxDim; }
       }
-
-      canvas.width = width;
-      canvas.height = height;
+      canvas.width = width; canvas.height = height;
       const ctx = canvas.getContext('2d');
-
-      // Draw original image
       ctx.drawImage(img, 0, 0, width, height);
-
-      // Get pixel data
       const imageData = ctx.getImageData(0, 0, width, height);
       const data = imageData.data;
-
-      // Apply enhancement:
-      // 1. Convert to grayscale
-      // 2. Boost contrast (makes text black, background white)
-      // 3. Sharpen edges
       for (let i = 0; i < data.length; i += 4) {
-        // Grayscale
         const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-
-        // Contrast boost — push darks darker, lights lighter
-        // Factor 1.8 = strong contrast boost for bill text
-        const factor = 1.8;
-        const contrasted = factor * (gray - 128) + 128;
-        const clamped = Math.max(0, Math.min(255, contrasted));
-
-        data[i] = clamped;
-        data[i + 1] = clamped;
-        data[i + 2] = clamped;
-        // Alpha unchanged
+        const contrasted = Math.max(0, Math.min(255, 1.8 * (gray - 128) + 128));
+        data[i] = data[i + 1] = data[i + 2] = contrasted;
       }
-
       ctx.putImageData(imageData, 0, 0);
-
-      // Export as high quality JPEG
       canvas.toBlob((blob) => {
-        const enhanced = new File([blob], file.name.replace(/\.[^.]+$/, '_enhanced.jpg'), {
-          type: 'image/jpeg'
-        });
+        const enhanced = new File([blob], file.name.replace(/\.[^.]+$/, '_enhanced.jpg'), { type: 'image/jpeg' });
         URL.revokeObjectURL(url);
         resolve(enhanced);
       }, 'image/jpeg', 0.92);
     };
-
-    img.onerror = () => {
-      // Enhancement failed — use original
-      URL.revokeObjectURL(url);
-      resolve(file);
-    };
-
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
     img.src = url;
   });
+};
+
+// Convert file to base64 for sessionStorage
+const fileToBase64 = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({
+      name: file.name,
+      type: file.type,
+      data: reader.result
+    });
+    reader.readAsDataURL(file);
+  });
+};
+
+// Convert base64 back to File
+const base64ToFile = (item) => {
+  const arr = item.data.split(',');
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) u8arr[n] = bstr.charCodeAt(n);
+  return new File([u8arr], item.name, { type: item.type });
 };
 
 export default function UploadPage() {
@@ -128,26 +102,33 @@ export default function UploadPage() {
   const [enhancing, setEnhancing] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [showCameraTips, setShowCameraTips] = useState(false);
-  const [pendingCameraSource, setPendingCameraSource] = useState(null);
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
 
   useEffect(() => {
     if (!loading && !user) router.replace('/login');
     if (user) {
-      Promise.all([getChainInfo(), getProfile()])
-        .then(([chainRes, profileRes]) => {
-          setChain(chainRes.data);
-          // Gate — no appliances = force onboarding first
-          const applianceCount = profileRes.data.user.appliances?.length || 0;
-          if (applianceCount === 0) {
-            toast(
-              lang === 'EN'
-                ? 'Please declare your appliances first — helps JIMAT calculate your savings'
-                : 'Sila isytihar peralatan anda dahulu — membantu JIMAT kira penjimatan anda',
-              { icon: '⚡', duration: 4000 }
-            );
-            router.replace('/dashboard/onboarding');
+      getChainInfo()
+        .then(res => {
+          setChain(res.data);
+
+          // Restore pending files if coming back from onboarding
+          const pendingFiles = sessionStorage.getItem('jimat_pending_files');
+          if (pendingFiles) {
+            try {
+              const parsed = JSON.parse(pendingFiles);
+              const restored = parsed.map(base64ToFile);
+              setFiles(restored);
+              sessionStorage.removeItem('jimat_pending_files');
+              toast.success(
+                lang === 'EN'
+                  ? 'Appliances saved! Now scan your bills.'
+                  : 'Peralatan disimpan! Kini imbas bil anda.',
+                { icon: '⚡' }
+              );
+            } catch (e) {
+              sessionStorage.removeItem('jimat_pending_files');
+            }
           }
         })
         .catch(() => toast.error('Failed to load'))
@@ -159,20 +140,11 @@ export default function UploadPage() {
     const maxFiles = chain?.chain?.billsRequired || 2;
     const valid = Array.from(selected).filter(f => {
       const allowed = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-      if (!allowed.includes(f.type)) {
-        toast.error(`${f.name} — JPG, PNG or PDF only`);
-        return false;
-      }
-      if (f.size > 10 * 1024 * 1024) {
-        toast.error(`${f.name} — Max 10MB`);
-        return false;
-      }
+      if (!allowed.includes(f.type)) { toast.error(`${f.name} — JPG, PNG or PDF only`); return false; }
+      if (f.size > 10 * 1024 * 1024) { toast.error(`${f.name} — Max 10MB`); return false; }
       return true;
     });
-
     if (valid.length === 0) return;
-
-    // Enhance images before adding
     setEnhancing(true);
     try {
       const enhanced = await Promise.all(valid.map(f => enhanceImageForOCR(f)));
@@ -185,7 +157,6 @@ export default function UploadPage() {
         return combined;
       });
     } catch (e) {
-      // Fallback to original files
       setFiles(prev => {
         const combined = [...prev, ...valid];
         if (combined.length > maxFiles) return combined.slice(0, maxFiles);
@@ -197,25 +168,14 @@ export default function UploadPage() {
   }, [chain, lang]);
 
   const handleCamera = async (e) => {
-    if (e.target.files?.length) {
-      await addFiles(e.target.files);
-      e.target.value = '';
-    }
+    if (e.target.files?.length) { await addFiles(e.target.files); e.target.value = ''; }
   };
 
   const handleGallery = async (e) => {
-    if (e.target.files?.length) {
-      await addFiles(e.target.files);
-      e.target.value = '';
-    }
+    if (e.target.files?.length) { await addFiles(e.target.files); e.target.value = ''; }
   };
 
   const removeFile = (index) => setFiles(files.filter((_, i) => i !== index));
-
-  // Show camera tips before opening camera
-  const handleCameraClick = () => {
-    setShowCameraTips(true);
-  };
 
   const openCamera = () => {
     setShowCameraTips(false);
@@ -231,46 +191,35 @@ export default function UploadPage() {
       return;
     }
 
-    // Gate — check appliances before scanning
-    try {
-      const profileRes = await getProfile();
-      const applianceCount = profileRes.data.user.appliances?.length || 0;
-      if (applianceCount === 0) {
-        toast(
-          lang === 'EN'
-            ? '⚡ Please declare your appliances first — JIMAT needs this to calculate your savings'
-            : '⚡ Sila isytihar peralatan anda dahulu — JIMAT perlukan ini untuk kira penjimatan anda',
-          { duration: 4000 }
-        );
+    const chainStatus = chain?.chain?.status || 'ONBOARD';
+
+    // ONBOARD or RESET — appliances first
+    if (chainStatus === 'ONBOARD' || chainStatus === 'RESET') {
+      try {
+        // Store files as base64 in sessionStorage
+        const base64Files = await Promise.all(files.map(fileToBase64));
+        sessionStorage.setItem('jimat_pending_files', JSON.stringify(base64Files));
         router.push('/dashboard/onboarding');
-        return;
+      } catch (e) {
+        toast.error('Failed to save files. Please try again.');
       }
-    } catch (e) {
-      // Profile fetch failed — allow to proceed, don't block
+      return;
     }
 
+    // MONTHLY — scan immediately
     setScanning(true);
     try {
       const formData = new FormData();
       files.forEach(f => formData.append('bills', f));
-
       const res = await scanBills(formData);
       const { ocrResults, pricing } = res.data;
-
-      // Store OCR results in sessionStorage for confirm page
       sessionStorage.setItem('jimat_ocr_results', JSON.stringify(ocrResults));
       sessionStorage.setItem('jimat_pricing', JSON.stringify(pricing));
-
-      // Navigate to confirm page
       router.push('/dashboard/confirm');
-
     } catch (err) {
-      const errorCode = err.response?.data?.errorCode;
       const isPdfAdvice = err.response?.data?.isPdfAdvice;
       const message = err.response?.data?.message || 'Failed to scan bills';
-
       if (isPdfAdvice) {
-        // OCR failed — show PDF advice
         toast.error(
           lang === 'EN'
             ? 'Could not read bill clearly. Try uploading as PDF from TNB email or myTNB app.'
@@ -319,7 +268,6 @@ export default function UploadPage() {
     <div className="min-h-screen relative" style={{ background: '#000000' }}>
       <ElectricBackground />
 
-      {/* Hidden inputs */}
       <input ref={cameraRef} type="file" accept="image/*" capture="environment"
         onChange={handleCamera} className="hidden" />
       <input ref={galleryRef} type="file" accept=".jpg,.jpeg,.png,.pdf"
@@ -340,13 +288,7 @@ export default function UploadPage() {
               <p className="text-white font-bold text-lg mb-1">
                 {lang === 'EN' ? 'Tips For Best Scan' : 'Tips Untuk Imbasan Terbaik'}
               </p>
-              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                {lang === 'EN'
-                  ? 'Better photo = more accurate analysis'
-                  : 'Foto lebih jelas = analisis lebih tepat'}
-              </p>
             </div>
-
             <div className="space-y-3">
               {[
                 { icon: '📄', en: 'Lay bill flat — no folds or creases', bm: 'Letak bil rata — tiada lipatan' },
@@ -363,47 +305,33 @@ export default function UploadPage() {
                 </div>
               ))}
             </div>
-
-            {/* PDF tip */}
             <div className="rounded-xl p-3"
               style={{ background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.2)' }}>
               <p className="text-xs" style={{ color: 'rgba(96,165,250,0.8)' }}>
                 💡 {lang === 'EN'
-                  ? 'Pro tip: PDF from TNB email or myTNB app gives 10x better accuracy than a photo.'
-                  : 'Tip pro: PDF dari email TNB atau apl myTNB memberi ketepatan 10x lebih baik daripada foto.'}
+                  ? 'Pro tip: PDF from TNB email or myTNB app gives 10x better accuracy.'
+                  : 'Tip pro: PDF dari email TNB atau apl myTNB memberi ketepatan 10x lebih baik.'}
               </p>
             </div>
-
             <div className="flex gap-3">
-              <button
-                onClick={() => setShowCameraTips(false)}
+              <button onClick={() => setShowCameraTips(false)}
                 className="flex-1 py-3 rounded-xl text-sm font-semibold"
-                style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}
-              >
+                style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>
                 {lang === 'EN' ? 'Cancel' : 'Batal'}
               </button>
-              <button
-                onClick={openCamera}
+              <button onClick={openCamera}
                 className="flex-1 py-3 rounded-xl text-sm font-bold"
-                style={{
-                  background: 'linear-gradient(135deg, #FACC15 0%, #EAB308 100%)',
-                  color: '#000000',
-                  boxShadow: '0 0 15px rgba(250,204,21,0.3)'
-                }}
-              >
+                style={{ background: 'linear-gradient(135deg, #FACC15 0%, #EAB308 100%)', color: '#000000' }}>
                 <span className="flex items-center justify-center gap-2">
                   <Camera className="w-4 h-4" />
                   {lang === 'EN' ? 'Open Camera' : 'Buka Kamera'}
                 </span>
               </button>
             </div>
-
-            {/* Upload PDF option in tips */}
             <button
               onClick={() => { setShowCameraTips(false); setTimeout(() => galleryRef.current?.click(), 100); }}
               className="w-full py-3 rounded-xl text-sm font-semibold text-center"
-              style={{ color: 'rgba(96,165,250,0.7)', textDecoration: 'underline' }}
-            >
+              style={{ color: 'rgba(96,165,250,0.7)', textDecoration: 'underline' }}>
               {lang === 'EN' ? 'Upload PDF instead (recommended)' : 'Muat naik PDF sebaliknya (disyorkan)'}
             </button>
           </div>
@@ -429,19 +357,15 @@ export default function UploadPage() {
 
       <div className="relative z-10 max-w-lg mx-auto px-4 py-6 pb-32 space-y-5">
 
-        {/* Title */}
         <div>
           <h1 className="text-xl font-bold text-white mb-1">
             {lang === 'EN' ? 'Upload Your TNB Bill' : 'Muat Naik Bil TNB Anda'}
           </h1>
           <p className="text-sm" style={{ color: 'rgba(250,204,21,0.6)' }}>
-            ⚡ {lang === 'EN'
-              ? 'AI reads your bill in seconds'
-              : 'AI membaca bil anda dalam beberapa saat'}
+            ⚡ {lang === 'EN' ? 'AI reads your bill in seconds' : 'AI membaca bil anda dalam beberapa saat'}
           </p>
         </div>
 
-        {/* Chain + Price Banner */}
         <div className="rounded-2xl p-4" style={{ background: cc.bg, border: `1px solid ${cc.border}` }}>
           <p className="text-white text-sm font-semibold">{cc.label}</p>
           <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
@@ -501,7 +425,6 @@ export default function UploadPage() {
           </div>
         )}
 
-        {/* Enhancing indicator */}
         {enhancing && (
           <div className="flex items-center justify-center gap-3 py-3 rounded-xl"
             style={{ background: 'rgba(250,204,21,0.05)', border: '1px solid rgba(250,204,21,0.15)' }}>
@@ -513,7 +436,6 @@ export default function UploadPage() {
           </div>
         )}
 
-        {/* Add Bill Section */}
         {canAddMore && !scanning && !enhancing && (
           <div className="space-y-3">
             <p className="text-sm text-center font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>
@@ -524,21 +446,11 @@ export default function UploadPage() {
                   : `Tambah Bil ${files.length + 1} daripada ${billsRequired}`)}
             </p>
 
-            {/* Camera — PRIMARY */}
-            <button
-              onClick={handleCameraClick}
+            <button onClick={() => setShowCameraTips(true)}
               className="w-full rounded-2xl p-6 flex flex-col items-center gap-3 transition-all duration-300"
-              style={{
-                background: 'rgba(250,204,21,0.06)',
-                border: '2px solid rgba(250,204,21,0.25)',
-                boxShadow: '0 0 20px rgba(250,204,21,0.05)'
-              }}
-            >
+              style={{ background: 'rgba(250,204,21,0.06)', border: '2px solid rgba(250,204,21,0.25)' }}>
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                style={{
-                  background: 'linear-gradient(135deg, #FACC15 0%, #EAB308 100%)',
-                  boxShadow: '0 0 25px rgba(250,204,21,0.4)'
-                }}>
+                style={{ background: 'linear-gradient(135deg, #FACC15 0%, #EAB308 100%)', boxShadow: '0 0 25px rgba(250,204,21,0.4)' }}>
                 <Camera className="w-8 h-8" style={{ color: '#000000' }} />
               </div>
               <div className="text-center">
@@ -546,28 +458,20 @@ export default function UploadPage() {
                   {lang === 'EN' ? 'Snap Your Bill' : 'Ambil Gambar Bil'}
                 </p>
                 <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                  {lang === 'EN'
-                    ? 'Camera opens with scan tips'
-                    : 'Kamera dibuka dengan tips imbasan'}
+                  {lang === 'EN' ? 'Camera opens with scan tips' : 'Kamera dibuka dengan tips imbasan'}
                 </p>
               </div>
             </button>
 
-            {/* Divider */}
             <div className="flex items-center gap-3">
               <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
-              <span className="text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
-                {lang === 'EN' ? 'or' : 'atau'}
-              </span>
+              <span className="text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>{lang === 'EN' ? 'or' : 'atau'}</span>
               <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
             </div>
 
-            {/* PDF / Gallery */}
-            <button
-              onClick={() => galleryRef.current?.click()}
+            <button onClick={() => galleryRef.current?.click()}
               className="w-full rounded-2xl p-4 flex items-center gap-4 transition-all duration-300"
-              style={{ background: 'rgba(96,165,250,0.05)', border: '1px solid rgba(96,165,250,0.2)' }}
-            >
+              style={{ background: 'rgba(96,165,250,0.05)', border: '1px solid rgba(96,165,250,0.2)' }}>
               <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
                 style={{ background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.3)' }}>
                 <FolderOpen className="w-5 h-5" style={{ color: 'rgba(96,165,250,0.8)' }} />
@@ -577,38 +481,30 @@ export default function UploadPage() {
                   {lang === 'EN' ? '📄 Upload PDF (Recommended)' : '📄 Muat Naik PDF (Disyorkan)'}
                 </p>
                 <p className="text-xs" style={{ color: 'rgba(96,165,250,0.6)' }}>
-                  {lang === 'EN'
-                    ? 'From TNB email or myTNB app — 10x more accurate'
-                    : 'Dari email TNB atau apl myTNB — 10x lebih tepat'}
+                  {lang === 'EN' ? 'From TNB email or myTNB app — 10x more accurate' : 'Dari email TNB atau apl myTNB — 10x lebih tepat'}
                 </p>
               </div>
             </button>
           </div>
         )}
 
-        {/* Add more buttons when 1 file added but need 2 */}
         {files.length > 0 && canAddMore && !scanning && !enhancing && (
           <div className="flex gap-2 mt-1">
-            <button
-              onClick={handleCameraClick}
+            <button onClick={() => setShowCameraTips(true)}
               className="flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold"
-              style={{ background: 'rgba(250,204,21,0.1)', border: '1px solid rgba(250,204,21,0.3)', color: '#FACC15' }}
-            >
+              style={{ background: 'rgba(250,204,21,0.1)', border: '1px solid rgba(250,204,21,0.3)', color: '#FACC15' }}>
               <Camera className="w-4 h-4" />
               {lang === 'EN' ? 'Snap Bill 2' : 'Ambil Gambar Bil 2'}
             </button>
-            <button
-              onClick={() => galleryRef.current?.click()}
+            <button onClick={() => galleryRef.current?.click()}
               className="flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold"
-              style={{ background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.2)', color: 'rgba(96,165,250,0.7)' }}
-            >
+              style={{ background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.2)', color: 'rgba(96,165,250,0.7)' }}>
               <FolderOpen className="w-4 h-4" />
-              {lang === 'EN' ? 'PDF' : 'PDF'}
+              PDF
             </button>
           </div>
         )}
 
-        {/* 2 bills warning */}
         {billsRequired === 2 && files.length < billsRequired && !scanning && (
           <div className="flex gap-2 rounded-xl p-3"
             style={{ background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.25)' }}>
@@ -621,7 +517,6 @@ export default function UploadPage() {
           </div>
         )}
 
-        {/* Scanning State */}
         {scanning && (
           <div className="rounded-2xl p-8 text-center"
             style={{ background: 'rgba(250,204,21,0.05)', border: '1px solid rgba(250,204,21,0.2)' }}>
@@ -638,36 +533,29 @@ export default function UploadPage() {
               {lang === 'EN' ? 'AI Reading Your Bill...' : 'AI Sedang Membaca Bil Anda...'}
             </p>
             <p className="text-xs mt-1" style={{ color: 'rgba(250,204,21,0.6)' }}>
-              {lang === 'EN'
-                ? 'Extracting charges and usage data'
-                : 'Mengekstrak caj dan data penggunaan'}
+              {lang === 'EN' ? 'Extracting charges and usage data' : 'Mengekstrak caj dan data penggunaan'}
             </p>
           </div>
         )}
 
-        {/* Scan Button */}
         {filesReady && !scanning && !enhancing && (
           <div className="space-y-3 pt-2">
-            <button
-              onClick={handleScan}
+            <button onClick={handleScan}
               className="w-full py-4 rounded-xl font-bold text-base transition-all duration-300"
-              style={{
-                background: 'linear-gradient(135deg, #FACC15 0%, #EAB308 100%)',
-                color: '#000000',
-                boxShadow: '0 0 25px rgba(250,204,21,0.4)'
-              }}
-            >
+              style={{ background: 'linear-gradient(135deg, #FACC15 0%, #EAB308 100%)', color: '#000000', boxShadow: '0 0 25px rgba(250,204,21,0.4)' }}>
               <span className="flex items-center justify-center gap-2">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" fill="#000000" />
                 </svg>
-                {lang === 'EN' ? 'Scan & Verify Bill' : 'Imbas & Sahkan Bil'}
+                {chainStatus === 'MONTHLY'
+                  ? (lang === 'EN' ? 'Scan & Verify Bill' : 'Imbas & Sahkan Bil')
+                  : (lang === 'EN' ? 'Next — Declare Appliances' : 'Seterusnya — Isytihar Peralatan')}
               </span>
             </button>
             <p className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.2)' }}>
-              {lang === 'EN'
-                ? '⚡ You will verify the extracted values before paying'
-                : '⚡ Anda akan mengesahkan nilai yang diekstrak sebelum membayar'}
+              {chainStatus === 'MONTHLY'
+                ? (lang === 'EN' ? '⚡ You will verify the extracted values before paying' : '⚡ Anda akan mengesahkan nilai yang diekstrak sebelum membayar')
+                : (lang === 'EN' ? '⚡ Declare your appliances so JIMAT can calculate your savings' : '⚡ Isytihar peralatan anda supaya JIMAT boleh kira penjimatan anda')}
             </p>
           </div>
         )}
