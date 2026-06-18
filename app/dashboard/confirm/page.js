@@ -88,7 +88,7 @@ export default function ConfirmPage() {
       sessionStorage.removeItem('jimat_pricing');
 
       toast.success(lang === 'EN' ? 'Analysis ready!' : 'Analisis bersedia!');
-      router.push(`/dashboard/teaser?id=${teaser.recordId}&amount=${teaser.estimatedOverspendMyr}&price=${responsePricing?.price || pricing?.price || 11.99}`);
+      router.push(`/dashboard/teaser?id=${teaser.recordId}`);
 
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to process bills');

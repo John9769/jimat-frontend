@@ -63,24 +63,6 @@ function ElectricBackground() {
   );
 }
 
-function AnimatedAmount({ amount }) {
-  const [displayed, setDisplayed] = useState(0);
-  useEffect(() => {
-    let start = 0;
-    const target = amount;
-    const startTime = Date.now();
-    const tick = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / 1500, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplayed(eased * target);
-      if (progress < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }, [amount]);
-  return <span>RM{displayed.toFixed(2)}</span>;
-}
-
 function TeaserContent() {
   const { user, loading, lang } = useAuth();
   const router = useRouter();
@@ -135,14 +117,17 @@ function TeaserContent() {
 
   if (!teaserData) return null;
 
-  const estimatedSaving = teaserData.estimatedOverspendMyr || 0;
+  const teaserLow = teaserData.teaserLow || 0;
+  const teaserHigh = teaserData.teaserHigh || 0;
+  const teaserMessage = teaserData.teaserMessage || '';
+  const coverageGapKwh = teaserData.coverageGapKwh || 0;
+  const coveragePercent = teaserData.coveragePercent || 100;
   const healthScore = teaserData.healthScore;
   const healthBand = teaserData.healthBand;
   const band = healthBand ? BAND_CONFIG[healthBand] : null;
   const missionKwhTarget = teaserData.missionKwhTarget;
+  const showCoverageAlert = coveragePercent < 80 && coverageGapKwh > 0;
 
-  // Price based on referenceMonth presence (onboard vs loyal)
-  // Teaser doesn't know price — fetch from chain or use default
   const price = teaserData.referenceMonth ? 6.99 : 11.99;
   const total = (price + 1).toFixed(2);
 
@@ -177,7 +162,7 @@ function TeaserContent() {
 
       <div className="relative z-10 max-w-lg mx-auto px-4 py-6 pb-36 space-y-5">
 
-        {/* Health Score Preview — NEW */}
+        {/* Health Score Preview */}
         {band && healthScore !== null && (
           <div className="rounded-2xl p-4 text-center transition-all duration-700"
             style={{
@@ -208,7 +193,36 @@ function TeaserContent() {
           </div>
         )}
 
-        {/* Hero — Saving Amount */}
+        {/* Coverage Gap Alert */}
+        {showCoverageAlert && (
+          <div className="rounded-2xl p-4 transition-all duration-700"
+            style={{
+              opacity: mounted ? 1 : 0,
+              background: 'rgba(239,68,68,0.06)',
+              border: '1px solid rgba(239,68,68,0.25)'
+            }}>
+            <div className="flex items-start gap-3">
+              <span style={{ fontSize: '1.5rem' }}>🔍</span>
+              <div>
+                <p className="text-sm font-bold text-white mb-1">
+                  {lang === 'EN' ? 'Hidden Appliances Detected' : 'Peralatan Tersembunyi Dikesan'}
+                </p>
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                  {lang === 'EN'
+                    ? `Your declared appliances account for only ${coveragePercent}% of your actual usage. ${coverageGapKwh.toFixed(0)} kWh is unaccounted for — hidden bleeders exist.`
+                    : `Peralatan yang anda isytiharkan hanya menyumbang ${coveragePercent}% daripada penggunaan sebenar. ${coverageGapKwh.toFixed(0)} kWh tidak dapat dijelaskan — pembazir tersembunyi wujud.`}
+                </p>
+                <p className="text-xs mt-2 font-medium" style={{ color: 'rgba(239,68,68,0.8)' }}>
+                  {lang === 'EN'
+                    ? 'Add missing appliances next month for a more accurate report.'
+                    : 'Tambah peralatan yang tiada bulan depan untuk laporan yang lebih tepat.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Hero — Saving Range */}
         <div className="text-center py-4 transition-all duration-700"
           style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(20px)' }}>
           <div className="flex items-center justify-center gap-2 mb-3">
@@ -219,7 +233,6 @@ function TeaserContent() {
             <div className="h-px flex-1" style={{ background: 'rgba(250,204,21,0.2)' }} />
           </div>
 
-          {/* Reference month context */}
           {teaserData.referenceMonth && (
             <p className="text-xs mb-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
               {lang === 'EN'
@@ -238,19 +251,32 @@ function TeaserContent() {
               <div className="w-48 h-48 rounded-full"
                 style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.08) 0%, transparent 70%)' }} />
             </div>
+
             <p className="text-sm mb-2 relative z-10" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              {lang === 'EN' ? 'Potential monthly saving identified' : 'Potensi penjimatan bulanan dikenal pasti'}
+              {lang === 'EN' ? 'You could save' : 'Anda boleh jimat'}
             </p>
+
+            {/* RANGE DISPLAY */}
             <div className="relative z-10" style={{
-              fontSize: '3.5rem', fontWeight: 900, color: '#FACC15',
+              fontSize: '3rem', fontWeight: 900, color: '#FACC15',
               textShadow: '0 0 30px rgba(250,204,21,0.6), 0 0 60px rgba(250,204,21,0.3)', lineHeight: 1.1
             }}>
-              {mounted ? <AnimatedAmount amount={estimatedSaving} /> : `RM${estimatedSaving.toFixed(2)}`}
+              RM{teaserLow.toFixed(0)} – RM{teaserHigh.toFixed(0)}
             </div>
+
             <p className="text-sm relative z-10 mt-2" style={{ color: 'rgba(250,204,21,0.6)' }}>
               {t('common.perMonth', lang)}
             </p>
+
+            {/* Teaser Message */}
+            {teaserMessage && (
+              <p className="text-xs relative z-10 mt-3 px-2"
+                style={{ color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
+                {teaserMessage}
+              </p>
+            )}
           </div>
+
           <p className="text-xs mt-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
             {t('teaser.disclaimer', lang)}
           </p>
@@ -289,11 +315,13 @@ function TeaserContent() {
           style={{ background: 'rgba(250,204,21,0.05)', border: '1px solid rgba(250,204,21,0.15)' }}>
           <p className="text-sm text-white font-semibold">
             {lang === 'EN'
-              ? `Pay RM${total} → Potentially save RM${estimatedSaving.toFixed(2)}/month`
-              : `Bayar RM${total} → Jimat anggaran RM${estimatedSaving.toFixed(2)}/bulan`}
+              ? `Pay RM${total} → Potentially save RM${teaserLow.toFixed(0)} – RM${teaserHigh.toFixed(0)}/month`
+              : `Bayar RM${total} → Jimat anggaran RM${teaserLow.toFixed(0)} – RM${teaserHigh.toFixed(0)}/bulan`}
           </p>
           <p className="text-xs mt-1" style={{ color: 'rgba(250,204,21,0.6)' }}>
-            {lang === 'EN' ? 'ROI in less than 1 week' : 'Pulangan dalam masa kurang dari 1 minggu'}
+            {lang === 'EN'
+              ? `Even at the low end — you're RM${(teaserLow - price).toFixed(0)} ahead`
+              : `Walaupun anggaran terendah — anda untung RM${(teaserLow - price).toFixed(0)}`}
           </p>
         </div>
       </div>

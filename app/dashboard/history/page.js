@@ -116,13 +116,16 @@ export default function HistoryPage() {
             {records.map((record) => {
               const band = record.healthBand ? BAND_CONFIG[record.healthBand] : null;
               const cajSemasa = record.cajSemasa || record.totalAmountMyr;
+              const teaserLow = record.teaserLow || 0;
+              const teaserHigh = record.teaserHigh || 0;
+              const hasTeaserRange = teaserLow > 0 || teaserHigh > 0;
 
               return (
                 <div
                   key={record.id}
                   onClick={() => record.isUnlocked
                     ? router.push(`/dashboard/report?id=${record.id}`)
-                    : router.push(`/dashboard/teaser?id=${record.id}&amount=${record.teaserAmount || 0}`)
+                    : router.push(`/dashboard/teaser?id=${record.id}`)
                   }
                   className="rounded-2xl p-4 cursor-pointer transition-all duration-300"
                   style={{
@@ -148,7 +151,6 @@ export default function HistoryPage() {
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="text-white font-bold">{record.billingMonth}</p>
-                          {/* Mission completed badge */}
                           {record.missionCompleted && (
                             <span className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full"
                               style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e' }}>
@@ -160,19 +162,20 @@ export default function HistoryPage() {
                         <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
                           {record.totalKwh} kWh — RM{cajSemasa?.toFixed(2)}
                         </p>
-                        {/* Health score or teaser */}
+
+                        {/* Health score or teaser range */}
                         {record.isUnlocked && band && record.healthScore !== null ? (
                           <p className="text-xs mt-0.5" style={{ color: band.color }}>
                             {band.emoji} {record.healthScore}/100 — {band.label[lang] || band.label.EN}
                           </p>
-                        ) : !record.isUnlocked && record.teaserAmount ? (
+                        ) : !record.isUnlocked && hasTeaserRange ? (
                           <p className="text-xs mt-0.5" style={{ color: '#FACC15' }}>
                             ⚡ {lang === 'EN'
-                              ? `Est. save RM${record.teaserAmount?.toFixed(2)}/month`
-                              : `Jimat anggaran RM${record.teaserAmount?.toFixed(2)}/bulan`}
+                              ? `Est. save RM${teaserLow.toFixed(0)} – RM${teaserHigh.toFixed(0)}/month`
+                              : `Jimat anggaran RM${teaserLow.toFixed(0)} – RM${teaserHigh.toFixed(0)}/bulan`}
                           </p>
                         ) : null}
-                        {/* Reference month context */}
+
                         {record.referenceMonth && (
                           <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.25)' }}>
                             {lang === 'EN'

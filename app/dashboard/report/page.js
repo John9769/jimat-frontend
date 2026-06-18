@@ -153,13 +153,12 @@ function ReportContent() {
         </button>
       </div>
 
-      {/* Health Score Banner — TOP OF REPORT */}
+      {/* Health Score Banner */}
       {health && band && (
         <div className="relative z-10 px-4 py-3"
-          style={{ background: `rgba(0,0,0,0.8)`, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          style={{ background: 'rgba(0,0,0,0.8)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <div className="max-w-lg mx-auto">
             <div className="flex items-center justify-between">
-              {/* Score */}
               <div className="flex items-center gap-3">
                 <span style={{ fontSize: '1.5rem' }}>{band.emoji}</span>
                 <div>
@@ -171,7 +170,6 @@ function ReportContent() {
                 </div>
               </div>
 
-              {/* Mission completion */}
               {health.missionCompletion && (
                 <div className="text-right">
                   {health.missionCompletion.completed ? (
@@ -196,7 +194,6 @@ function ReportContent() {
                 </div>
               )}
 
-              {/* Next target if no mission completion yet */}
               {!health.missionCompletion && health.missionKwhTarget && (
                 <div className="text-right">
                   <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
@@ -209,12 +206,10 @@ function ReportContent() {
               )}
             </div>
 
-            {/* Health message */}
             <p className="text-xs mt-2" style={{ color: 'rgba(255,255,255,0.35)' }}>
               {health.bandMessage}
             </p>
 
-            {/* Score bar */}
             <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
               <div className="h-full rounded-full transition-all duration-1000"
                 style={{ width: `${health.score}%`, background: band.color, boxShadow: `0 0 8px ${band.color}` }} />
@@ -289,7 +284,7 @@ function ReportContent() {
           </div>
         )}
 
-        {/* Savings Ledger */}
+        {/* Savings Ledger — Simplified */}
         {ledger && ledger.monthsAnalysed > 0 && (
           <div className="mt-4 rounded-2xl p-4"
             style={{ background: 'rgba(250,204,21,0.05)', border: '1px solid rgba(250,204,21,0.15)' }}>
@@ -301,6 +296,8 @@ function ReportContent() {
                 ? `Based on ${ledger.monthsAnalysed} month(s) analysed with JIMAT`
                 : `Berdasarkan ${ledger.monthsAnalysed} bulan dianalisis dengan JIMAT`}
             </p>
+
+            {/* Potential saving — only metric shown */}
             <div className="rounded-xl p-3 mb-3"
               style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
               <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
@@ -310,18 +307,16 @@ function ReportContent() {
                 RM{ledger.potentialSavingPerMonth?.toFixed(2)}/{lang === 'EN' ? 'month' : 'bulan'}
               </p>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { value: ledger.monthsAnalysed, label: lang === 'EN' ? 'Months' : 'Bulan', color: '#FACC15' },
-                { value: `RM${ledger.totalPaidToJimatMyr?.toFixed(2)}`, label: lang === 'EN' ? 'Paid to JIMAT' : 'Dibayar ke JIMAT', color: 'rgba(255,255,255,0.5)' },
-                { value: `RM${ledger.netGainMyr?.toFixed(2)}`, label: lang === 'EN' ? 'Net gain' : 'Keuntungan bersih', color: '#60a5fa' }
-              ].map((item, i) => (
-                <div key={i} className="text-center rounded-xl p-3"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <p className="font-bold text-base" style={{ color: item.color }}>{item.value}</p>
-                  <p className="text-xs mt-0.5 leading-tight" style={{ color: 'rgba(255,255,255,0.3)' }}>{item.label}</p>
-                </div>
-              ))}
+
+            {/* Months analysed */}
+            <div className="rounded-xl p-3"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                {lang === 'EN' ? 'Months analysed with JIMAT' : 'Bulan dianalisis dengan JIMAT'}
+              </p>
+              <p className="text-xl font-bold mt-1" style={{ color: '#FACC15' }}>
+                {ledger.monthsAnalysed} {lang === 'EN' ? 'months' : 'bulan'}
+              </p>
             </div>
 
             {/* Health journey */}
@@ -346,12 +341,6 @@ function ReportContent() {
                 </div>
               </div>
             )}
-
-            <p className="text-xs mt-3" style={{ color: 'rgba(255,255,255,0.2)' }}>
-              {lang === 'EN'
-                ? '* Net gain = potential monthly saving minus total paid to JIMAT'
-                : '* Keuntungan bersih = potensi jimat bulanan tolak jumlah dibayar ke JIMAT'}
-            </p>
           </div>
         )}
 

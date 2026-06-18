@@ -287,9 +287,11 @@ export default function DashboardPage() {
                       <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
                         {record.totalKwh} kWh — RM{record.totalAmountMyr}
                       </p>
-                      {!record.isUnlocked && record.teaserAmount && (
+                      {!record.isUnlocked && (record.teaserLow || record.teaserHigh) && (
                         <p className="text-xs mt-0.5" style={{ color: '#FACC15' }}>
-                          ⚡ {lang === 'EN' ? `Est. save RM${record.teaserAmount}/month` : `Jimat anggaran RM${record.teaserAmount}/bulan`}
+                          ⚡ {lang === 'EN'
+                            ? `Est. save RM${record.teaserLow?.toFixed(0)} – RM${record.teaserHigh?.toFixed(0)}/month`
+                            : `Jimat anggaran RM${record.teaserLow?.toFixed(0)} – RM${record.teaserHigh?.toFixed(0)}/bulan`}
                         </p>
                       )}
                     </div>
