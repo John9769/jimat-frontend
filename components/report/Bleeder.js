@@ -1,22 +1,24 @@
 import Card from '@/components/ui/Card';
-import { Flame, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 
 export default function Bleeder({ data, lang }) {
   if (!data) {
     return (
-      <Card className="text-center py-8">
-        <Zap className="w-8 h-8 text-gray-600 mx-auto mb-2" />
-        <p className="text-gray-400 text-sm">
+      <div className="rounded-2xl p-8 text-center"
+        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <Zap className="w-8 h-8 mx-auto mb-2" style={{ color: 'rgba(255,255,255,0.2)' }} />
+        <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
           {lang === 'EN' ? 'No appliance profile found. Update your profile first.' : 'Tiada profil peralatan. Kemaskini profil anda dahulu.'}
         </p>
-      </Card>
+      </div>
     );
   }
 
-  const { topBleeder, allBleeders, totalPotentialSavingMyr, coveragePercent } = data;
+  const { allBleeders } = data;
 
   const applianceEmoji = {
     AIRCOND: '❄️',
+    CENTRAL_AIRCOND: '🏭',
     WATER_HEATER: '🚿',
     REFRIGERATOR: '🧊',
     WASHING_MACHINE: '👕',
@@ -27,70 +29,66 @@ export default function Bleeder({ data, lang }) {
     MICROWAVE: '📡',
     OVEN: '🔥',
     COMPUTER: '💻',
+    FAN: '🌀',
+    IRON: '👔',
     OTHER: '⚡'
   };
 
   return (
-    <div className="space-y-4">
-      {/* Total Saving */}
-      <Card className="bg-gradient-to-br from-green-500/10 to-gray-900 border-green-500/30">
-        <div className="flex items-center gap-3 mb-2">
-          <Flame className="w-5 h-5 text-orange-400" />
-          <p className="text-white font-semibold">
-            {lang === 'EN' ? 'Total Potential Saving' : 'Jumlah Penjimatan Berpotensi'}
-          </p>
-        </div>
-        <p className="text-4xl font-bold text-green-500">RM{totalPotentialSavingMyr?.toFixed(2)}</p>
-        <p className="text-gray-400 text-xs mt-1">
-          {lang === 'EN' ? `Based on ${coveragePercent}% of your declared appliances` : `Berdasarkan ${coveragePercent}% peralatan yang anda isytihar`}
-        </p>
-      </Card>
+    <div className="space-y-3">
+      <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
+        {lang === 'EN'
+          ? 'These are your declared appliances and what they cost you monthly.'
+          : 'Ini adalah peralatan yang anda isytiharkan dan kos bulanannya.'}
+      </p>
 
-      {/* All Bleeders */}
-      <div className="space-y-3">
-        {allBleeders?.map((bleeder, i) => (
-          <Card key={bleeder.applianceId || i} className={i === 0 ? 'border-orange-500/30' : ''}>
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{applianceEmoji[bleeder.applianceType] || '⚡'}</span>
-                <div>
-                  <p className="text-white font-semibold text-sm">
-                    {bleeder.roomName}
-                    {i === 0 && <span className="ml-2 text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-full">#1 Bleeder</span>}
-                  </p>
-                  <p className="text-gray-400 text-xs">
-                    {bleeder.applianceType.replace('_', ' ')} · {bleeder.qty}x · {bleeder.avgHoursDaily}hrs/day
-                    {bleeder.inverter !== undefined && ` · ${bleeder.inverter ? 'Inverter' : 'Non-inverter'}`}
-                  </p>
+      {allBleeders?.map((bleeder, i) => (
+        <div key={bleeder.applianceId || i} className="rounded-2xl p-4"
+          style={{
+            background: i === 0 ? 'rgba(249,115,22,0.06)' : 'rgba(255,255,255,0.02)',
+            border: `1px solid ${i === 0 ? 'rgba(249,115,22,0.3)' : 'rgba(255,255,255,0.06)'}`
+          }}>
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">{applianceEmoji[bleeder.applianceType] || '⚡'}</span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-white font-semibold text-sm">{bleeder.roomName}</p>
+                  {i === 0 && (
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+                      style={{ background: 'rgba(249,115,22,0.2)', color: '#f97316' }}>
+                      #1 Bleeder
+                    </span>
+                  )}
                 </div>
-              </div>
-              <div className="text-right">
-                <p className="text-white font-bold">RM{bleeder.estimatedCostMyr?.toFixed(2)}</p>
-                <p className="text-gray-500 text-xs">/month</p>
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  {bleeder.applianceType.replace('_', ' ')} · {bleeder.qty}x · {bleeder.avgHoursDaily}hrs/day
+                  {bleeder.inverter !== undefined && bleeder.applianceType === 'AIRCOND' && ` · ${bleeder.inverter ? 'Inverter' : 'Non-inverter'}`}
+                </p>
               </div>
             </div>
+            <div className="text-right">
+              <p className="text-white font-bold">RM{bleeder.estimatedCostMyr?.toFixed(2)}</p>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>/month</p>
+            </div>
+          </div>
 
-            {/* Share of bill bar */}
-            <div className="mb-3">
-              <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>{lang === 'EN' ? 'Share of bill' : 'Bahagian bil'}</span>
-                <span>{bleeder.shareOfBill}%</span>
-              </div>
-              <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${i === 0 ? 'bg-orange-500' : 'bg-blue-500'}`}
-                  style={{ width: `${bleeder.shareOfBill}%` }}
-                />
-              </div>
+          {/* Share of bill bar */}
+          <div className="mb-3">
+            <div className="flex justify-between text-xs mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              <span>{lang === 'EN' ? 'Share of bill' : 'Bahagian bil'}</span>
+              <span>{bleeder.shareOfBill}%</span>
             </div>
-
-            {/* Saving tip */}
-            <div className="bg-green-500/10 rounded-xl px-3 py-2">
-              <p className="text-green-400 text-xs">💡 {bleeder.savingTip}</p>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <div className="h-full rounded-full"
+                style={{
+                  width: `${bleeder.shareOfBill}%`,
+                  background: i === 0 ? '#f97316' : '#3b82f6'
+                }} />
             </div>
-          </Card>
-        ))}
-      </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
