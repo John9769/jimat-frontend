@@ -41,8 +41,8 @@ export default function Missions({ missions, lang }) {
           </p>
           <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
             {lang === 'EN'
-              ? `Based on your declared appliances — missions below total RM${missionTotal.toFixed(2)}`
-              : `Berdasarkan peralatan yang anda isytiharkan — jumlah misi RM${missionTotal.toFixed(2)}`}
+              ? `Based on your declared appliances`
+              : `Berdasarkan peralatan yang anda isytiharkan`}
           </p>
         </div>
       )}
