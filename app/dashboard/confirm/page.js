@@ -78,7 +78,6 @@ export default function ConfirmPage() {
 
       toast.success(lang === 'EN' ? 'Analysis ready!' : 'Analisis bersedia!');
 
-      // MONTHLY — check coverage gap
       const coveragePercent = teaser.coveragePercent || 100;
       const coverageGapKwh = teaser.coverageGapKwh || 0;
 
@@ -117,56 +116,24 @@ export default function ConfirmPage() {
     );
   }
 
-  const latestOcr = ocrResults[ocrResults.length - 1];
-  const cajSemasa = latestOcr.cajSemasa || latestOcr.rawOcr?.cajSemasa || 0;
-  const totalKwh = latestOcr.totalKwh || latestOcr.rawOcr?.totalKwh || 0;
-  const billingMonth = latestOcr.billingMonth || latestOcr.rawOcr?.billingMonth || '';
-  const billingPeriodStart = latestOcr.billingPeriodStart || latestOcr.rawOcr?.billingPeriodStart || '';
-  const billingPeriodEnd = latestOcr.billingPeriodEnd || latestOcr.rawOcr?.billingPeriodEnd || '';
-  const billingPeriodDays = latestOcr.billingPeriodDays || latestOcr.rawOcr?.billingPeriodDays || 30;
-  const tunggakan = latestOcr.tunggakan || latestOcr.rawOcr?.tunggakan || 0;
-  const totalAmountMyr = latestOcr.totalAmountMyr || latestOcr.rawOcr?.totalAmountMyr || 0;
+  // Sort ascending — Bill 1 first, Bill 2 second
+  const sortedResults = [...ocrResults].sort((a, b) => {
+    const aMonth = a.billingMonth || a.rawOcr?.billingMonth || '';
+    const bMonth = b.billingMonth || b.rawOcr?.billingMonth || '';
+    return aMonth.localeCompare(bMonth);
+  });
 
-  const fields = [
-    {
-      label: lang === 'EN' ? 'Billing Month' : 'Bulan Bil',
-      value: formatMonth(billingMonth, lang),
-      hint: lang === 'EN' ? 'From end date of Tempoh Bil' : 'Dari tarikh akhir Tempoh Bil',
-      critical: true
-    },
-    {
-      label: lang === 'EN' ? 'Billing Period' : 'Tempoh Bil',
-      value: billingPeriodStart && billingPeriodEnd
-        ? `${billingPeriodStart} → ${billingPeriodEnd} (${billingPeriodDays} ${lang === 'EN' ? 'days' : 'hari'})`
-        : `${billingPeriodDays} ${lang === 'EN' ? 'days' : 'hari'}`,
-      hint: lang === 'EN' ? 'Tempoh Bil on your TNB bill' : 'Tempoh Bil pada bil TNB anda',
-      critical: false
-    },
-    {
-      label: lang === 'EN' ? 'Usage' : 'Penggunaan',
-      value: `${totalKwh} kWh`,
-      hint: lang === 'EN' ? 'Penggunaan Anda on your bill' : 'Penggunaan Anda pada bil anda',
-      critical: true
-    },
-    {
-      label: lang === 'EN' ? 'Current Month Bill (Caj Semasa)' : 'Bil Bulan Semasa (Caj Semasa)',
-      value: `RM${cajSemasa?.toFixed(2)}`,
-      hint: lang === 'EN' ? 'Caj Semasa only — NOT including arrears' : 'Caj Semasa sahaja — TIDAK termasuk tunggakan',
-      critical: true
-    },
-    ...(tunggakan > 0 ? [{
-      label: lang === 'EN' ? 'Arrears (Tunggakan)' : 'Tunggakan',
-      value: `RM${tunggakan?.toFixed(2)}`,
-      hint: lang === 'EN' ? 'Outstanding from previous months' : 'Tertunggak dari bulan sebelum',
-      critical: false
-    }] : []),
-    ...(tunggakan > 0 ? [{
-      label: lang === 'EN' ? 'Total Amount Due' : 'Jumlah Perlu Dibayar',
-      value: `RM${totalAmountMyr?.toFixed(2)}`,
-      hint: lang === 'EN' ? 'Grand total including arrears' : 'Jumlah besar termasuk tunggakan',
-      critical: false
-    }] : [])
-  ];
+  const getBillData = (ocr) => ({
+    billingMonth: ocr.billingMonth || ocr.rawOcr?.billingMonth || '',
+    cajSemasa: ocr.cajSemasa || ocr.rawOcr?.cajSemasa || 0,
+    totalKwh: ocr.totalKwh || ocr.rawOcr?.totalKwh || 0,
+    billingPeriodStart: ocr.billingPeriodStart || ocr.rawOcr?.billingPeriodStart || '',
+    billingPeriodEnd: ocr.billingPeriodEnd || ocr.rawOcr?.billingPeriodEnd || '',
+    billingPeriodDays: ocr.billingPeriodDays || ocr.rawOcr?.billingPeriodDays || 30,
+    tunggakan: ocr.tunggakan || ocr.rawOcr?.tunggakan || 0,
+    totalAmountMyr: ocr.totalAmountMyr || ocr.rawOcr?.totalAmountMyr || 0,
+    isReference: ocr.isReference
+  });
 
   return (
     <div className="min-h-screen relative" style={{ background: '#000000' }}>
@@ -193,67 +160,105 @@ export default function ConfirmPage() {
 
         <div>
           <h1 className="text-xl font-bold text-white mb-1">
-            {lang === 'EN' ? '🔍 Verify Your Bill' : '🔍 Sahkan Bil Anda'}
+            {lang === 'EN' ? '🔍 Verify Your Bills' : '🔍 Sahkan Bil Anda'}
           </h1>
           <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
             {lang === 'EN'
-              ? 'Our AI extracted these values from your TNB bill. Please verify they match before proceeding.'
-              : 'AI kami mengekstrak nilai-nilai ini dari bil TNB anda. Sila sahkan ia sepadan sebelum meneruskan.'}
+              ? 'Our AI extracted these values. Please verify ALL bills match before proceeding.'
+              : 'AI kami mengekstrak nilai-nilai ini. Sila sahkan SEMUA bil sepadan sebelum meneruskan.'}
           </p>
         </div>
 
-        {ocrResults.length > 1 && (
-          <div className="rounded-xl p-3"
-            style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
-            <p className="text-xs font-semibold" style={{ color: '#22c55e' }}>
-              ✅ {lang === 'EN'
-                ? `${ocrResults.length} consecutive bills detected — showing latest bill`
-                : `${ocrResults.length} bil berturut-turut dikesan — menunjukkan bil terkini`}
-            </p>
-            <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              {ocrResults.map(r => formatMonth(r.billingMonth || r.rawOcr?.billingMonth, lang)).join(' + ')}
-            </p>
-          </div>
-        )}
+        {/* Show ALL bills */}
+        {sortedResults.map((ocr, idx) => {
+          const bill = getBillData(ocr);
+          const isRef = bill.isReference;
 
-        <div className="rounded-2xl overflow-hidden"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(250,204,21,0.15)' }}>
-          <div className="px-4 pt-4 pb-2">
-            <p className="text-sm font-bold text-white">
-              {lang === 'EN' ? '📋 What We Read From Your Bill' : '📋 Apa Yang Kami Baca Dari Bil Anda'}
-            </p>
-          </div>
-          <div className="px-4 pb-4 space-y-1">
-            {fields.map((field, i) => (
-              <div key={i} className="py-3"
-                style={{ borderBottom: i < fields.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>{field.label}</p>
-                    {field.critical && (
-                      <span className="text-xs px-1.5 py-0.5 rounded-full"
-                        style={{ background: 'rgba(250,204,21,0.1)', color: 'rgba(250,204,21,0.6)', fontSize: '10px' }}>
-                        {lang === 'EN' ? 'verify' : 'sahkan'}
-                      </span>
-                    )}
-                  </div>
-                  <p className="font-bold text-white text-right">{field.value}</p>
-                </div>
-                <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>{field.hint}</p>
+          return (
+            <div key={idx} className="rounded-2xl overflow-hidden"
+              style={{
+                background: isRef ? 'rgba(255,255,255,0.02)' : 'rgba(250,204,21,0.03)',
+                border: `1px solid ${isRef ? 'rgba(255,255,255,0.08)' : 'rgba(250,204,21,0.2)'}`
+              }}>
+              <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+                <p className="text-sm font-bold text-white">
+                  {isRef
+                    ? (lang === 'EN' ? `📋 Bill 1 — Reference` : `📋 Bil 1 — Rujukan`)
+                    : (lang === 'EN' ? `📋 Bill 2 — Your Report` : `📋 Bil 2 — Laporan Anda`)}
+                </p>
+                {!isRef && (
+                  <span className="text-xs px-2 py-0.5 rounded-full"
+                    style={{ background: 'rgba(250,204,21,0.1)', color: '#FACC15' }}>
+                    {lang === 'EN' ? 'Main Bill' : 'Bil Utama'}
+                  </span>
+                )}
               </div>
-            ))}
-          </div>
-        </div>
+
+              <div className="px-4 pb-4 space-y-1">
+                {[
+                  {
+                    label: lang === 'EN' ? 'Billing Month' : 'Bulan Bil',
+                    value: formatMonth(bill.billingMonth, lang),
+                    critical: true
+                  },
+                  {
+                    label: lang === 'EN' ? 'Billing Period' : 'Tempoh Bil',
+                    value: bill.billingPeriodStart && bill.billingPeriodEnd
+                      ? `${bill.billingPeriodStart} → ${bill.billingPeriodEnd} (${bill.billingPeriodDays} ${lang === 'EN' ? 'days' : 'hari'})`
+                      : `${bill.billingPeriodDays} ${lang === 'EN' ? 'days' : 'hari'}`,
+                    critical: false
+                  },
+                  {
+                    label: lang === 'EN' ? 'Usage' : 'Penggunaan',
+                    value: `${bill.totalKwh} kWh`,
+                    critical: true
+                  },
+                  {
+                    label: lang === 'EN' ? 'Caj Semasa' : 'Caj Semasa',
+                    value: `RM${bill.cajSemasa?.toFixed(2)}`,
+                    critical: true
+                  },
+                  ...(bill.tunggakan > 0 ? [{
+                    label: lang === 'EN' ? 'Arrears (Tunggakan)' : 'Tunggakan',
+                    value: `RM${bill.tunggakan?.toFixed(2)}`,
+                    critical: false
+                  }] : []),
+                  ...(bill.tunggakan > 0 ? [{
+                    label: lang === 'EN' ? 'Total Amount Due' : 'Jumlah Perlu Dibayar',
+                    value: `RM${bill.totalAmountMyr?.toFixed(2)}`,
+                    critical: false
+                  }] : [])
+                ].map((field, i, arr) => (
+                  <div key={i} className="py-2.5"
+                    style={{ borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>{field.label}</p>
+                        {field.critical && (
+                          <span className="text-xs px-1.5 py-0.5 rounded-full"
+                            style={{ background: 'rgba(250,204,21,0.1)', color: 'rgba(250,204,21,0.6)', fontSize: '10px' }}>
+                            {lang === 'EN' ? 'verify' : 'sahkan'}
+                          </span>
+                        )}
+                      </div>
+                      <p className="font-bold text-white text-right">{field.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
 
         <div className="rounded-2xl p-4"
           style={{ background: 'rgba(250,204,21,0.05)', border: '1px solid rgba(250,204,21,0.15)' }}>
           <p className="text-sm font-bold mb-2" style={{ color: '#FACC15' }}>
-            ⚡ {lang === 'EN' ? 'Check Against Your Physical Bill' : 'Semak Dengan Bil Fizikal Anda'}
+            ⚡ {lang === 'EN' ? 'Check Against Your Physical Bills' : 'Semak Dengan Bil Fizikal Anda'}
           </p>
           <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
             {lang === 'EN'
-              ? 'Compare the values above with your TNB bill. Pay attention to Caj Semasa (current month only, excluding arrears) and kWh usage. If they match — confirm and proceed to analysis.'
-              : 'Bandingkan nilai di atas dengan bil TNB anda. Perhatikan Caj Semasa (bulan semasa sahaja, tidak termasuk tunggakan) dan penggunaan kWh. Jika sepadan — sahkan dan teruskan ke analisis.'}
+              ? 'Compare BOTH bills above with your actual TNB bills. Check kWh usage and Caj Semasa for each. If both match — confirm and proceed.'
+              : 'Bandingkan KEDUA-DUA bil di atas dengan bil TNB sebenar anda. Semak penggunaan kWh dan Caj Semasa setiap satu. Jika kedua-dua sepadan — sahkan dan teruskan.'}
           </p>
         </div>
 
@@ -285,7 +290,7 @@ export default function ConfirmPage() {
             ) : (
               <span className="flex items-center justify-center gap-2">
                 <CheckCircle className="w-5 h-5" />
-                {lang === 'EN' ? '✅ Correct — Proceed to Analysis' : '✅ Betul — Teruskan ke Analisis'}
+                {lang === 'EN' ? '✅ Both Correct — Proceed' : '✅ Kedua-dua Betul — Teruskan'}
               </span>
             )}
           </button>
