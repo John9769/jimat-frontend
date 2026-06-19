@@ -128,8 +128,8 @@ function TeaserContent() {
   const missionKwhTarget = teaserData.missionKwhTarget;
   const showCoverageAlert = coveragePercent < 80 && coverageGapKwh > 0;
 
-  const price = teaserData.referenceMonth ? 6.99 : 11.99;
-  const total = (price + 1).toFixed(2);
+  const price = teaserData.price || (teaserData.referenceMonth ? 6.99 : 11.99);
+  const total = teaserData.total?.toFixed(2) || (price + 1).toFixed(2);
 
   const lockedItems = [
     { icon: '🔬', label: lang === 'EN' ? 'Full Bill Autopsy' : 'Bedah Siasat Bil Penuh' },
