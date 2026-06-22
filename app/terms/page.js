@@ -163,7 +163,7 @@ You may delete your account at any time by contacting hello@awas.asia.`
 AWAS Premium Resources
 SSM Registration: 202603141446
 Email: hello@awas.asia
-Platform: jimat-frontend.vercel.app`
+Platform: jimat.info`
             }
           ].map((section, i) => (
             <div key={i}>

@@ -145,7 +145,7 @@ We are not responsible for the privacy practices of these third-party providers.
 AWAS Premium Resources
 SSM Registration: 202603141446
 Email: hello@awas.asia
-Platform: jimat-frontend.vercel.app`
+Platform: jimat.info`
             }
           ].map((section, i) => (
             <div key={i}>
