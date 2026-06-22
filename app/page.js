@@ -389,7 +389,7 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-2 gap-3">
           {[
-            { icon: '🎯', title: 'Kenal Pasti Pembazir', desc: 'Tahu exact peralatan mana yang makan letrik paling banyak' },
+            { icon: '🎯', title: 'Kenal Pasti Pembazir', desc: 'Tahu exact peralatan mana yang guna letrik paling banyak' },
             { icon: '📋', title: '3 Misi Jimat', desc: 'Tindakan konkrit untuk kurangkan bil bulan depan' },
             { icon: '📊', title: 'Bulan vs Bulan', desc: 'Jejak kemajuan penjimatan anda setiap bulan' },
             { icon: '📡', title: 'AFA Watch', desc: 'Pantau kadar AFA yang ditetapkan Suruhanjaya Tenaga' },

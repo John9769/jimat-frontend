@@ -258,7 +258,7 @@ export default function RegisterPage() {
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-white mb-1">
               {step === 1
-                ? (lang === 'EN' ? 'Create Account' : 'Buat Akaun')
+                ? (lang === 'EN' ? 'Create Account' : 'Buka Akaun')
                 : isInstitutional
                   ? (lang === 'EN' ? 'Institution Profile' : 'Profil Institusi')
                   : (lang === 'EN' ? 'Your Home Profile' : 'Profil Rumah Anda')}
